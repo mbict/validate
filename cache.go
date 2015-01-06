@@ -91,6 +91,7 @@ func (c *cache) createField(field reflect.StructField, info *structInfo, index [
 			ft = ft.Elem()
 		}
 	}
+	isStruct = ft.Kind() == reflect.Struct
 
 	//for multipart files we dont threat them as slice structures
 	isFileheader = ft == multipartFileheaderType

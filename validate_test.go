@@ -37,6 +37,51 @@ func (s *validateSuite) Test_IdRequired(c *C) {
 	c.Assert(errs, DeepEquals, Errors{Error{FieldNames: []string{"Id"}, Classification: RequiredError, Message: "Required"}})
 }
 
+func (s *validateSuite) Test_SlicesRequired(c *C) {
+	v := NewValidator()
+	errs := v.Validate(BlogPost{
+		Id:      1,
+		Ratings: []int{1, 2, 3, 4, 5, 6},
+		Post: Post{
+			Title:   "Behold The Title!",
+			Content: "And some content",
+		},
+		Author:   Person{},
+		Coauthor: &Person{},
+		Readers: []Person{
+			Person{
+				Name:  "Michael Boke",
+				Email: "me@email.com",
+			},
+			Person{
+				Email: "you@email.com",
+			},
+			Person{},
+		},
+		Contributors: []*Person{
+			&Person{
+				Name:  "Michael Boke",
+				Email: "me@email.com",
+			},
+			&Person{
+				Email: "you@email.com",
+			},
+			&Person{},
+		},
+	})
+
+	c.Assert(errs, NotNil)
+	c.Assert(errs, DeepEquals, Errors{
+		Error{FieldNames: []string{"Rating"}, Classification: MaxError, Message: "Max"},
+		Error{FieldNames: []string{"Author.Name"}, Classification: RequiredError, Message: "Required"},
+		Error{FieldNames: []string{"Coauthor.Name"}, Classification: RequiredError, Message: "Required"},
+		Error{FieldNames: []string{"Readers.1.Name"}, Classification: RequiredError, Message: "Required"},
+		Error{FieldNames: []string{"Readers.2.Name"}, Classification: RequiredError, Message: "Required"},
+		Error{FieldNames: []string{"Contributors.1.Name"}, Classification: RequiredError, Message: "Required"},
+		Error{FieldNames: []string{"Contributors.2.Name"}, Classification: RequiredError, Message: "Required"},
+	})
+}
+
 func (s *validateSuite) Test_EmbeddedStructFieldRequired(c *C) {
 	v := NewValidator()
 	errs := v.Validate(BlogPost{
@@ -241,23 +286,23 @@ func (s *validateSuite) Test_InvalidCustomValidations(c *C) {
 		},
 		Error{
 			FieldNames:     []string{"0.MinSize"},
-			Classification: MinSizeError,
-			Message:        "MinSize",
+			Classification: MinError,
+			Message:        "Min",
 		},
 		Error{
 			FieldNames:     []string{"0.MinSizeSlice"},
-			Classification: MinSizeError,
-			Message:        "MinSize",
+			Classification: MinError,
+			Message:        "Min",
 		},
 		Error{
 			FieldNames:     []string{"0.MaxSize"},
-			Classification: MaxSizeError,
-			Message:        "MaxSize",
+			Classification: MaxError,
+			Message:        "Max",
 		},
 		Error{
 			FieldNames:     []string{"0.MaxSizeSlice"},
-			Classification: MaxSizeError,
-			Message:        "MaxSize",
+			Classification: MaxError,
+			Message:        "Max",
 		},
 		Error{
 			FieldNames:     []string{"0.Email"},

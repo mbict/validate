@@ -32,7 +32,7 @@ type (
 		Post
 		Id           int `validate:"Required"`
 		Ignored      string
-		Ratings      []int
+		Ratings      []int `validate:"Max(5)"`
 		Author       Person
 		Coauthor     *Person
 		Readers      []Person

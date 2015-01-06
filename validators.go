@@ -15,8 +15,8 @@ const (
 	RequiredError     = "RequiredError"
 	AlphaDashError    = "AlphaDashError"
 	AlphaDashDotError = "AlphaDashDotError"
-	MinSizeError      = "MinSizeError"
-	MaxSizeError      = "MaxSizeError"
+	MinError          = "MinError"
+	MaxError          = "MaxError"
 	EmailError        = "EmailError"
 	UrlError          = "UrlError"
 	RangeError        = "RangeError"
@@ -76,9 +76,9 @@ func minValidator(v reflect.Value, params []string, path string) (errors Errors)
 	}
 	min, _ := strconv.Atoi(params[0])
 	if v.Kind() == reflect.String && utf8.RuneCountInString(v.String()) < min {
-		errors.Add([]string{path}, MinSizeError, "MinSize")
+		errors.Add([]string{path}, MinError, "MinSize")
 	} else if v.Kind() == reflect.Slice && v.Len() < min {
-		errors.Add([]string{path}, MinSizeError, "MinSize")
+		errors.Add([]string{path}, MinError, "MinSize")
 	}
 	return
 }
@@ -89,9 +89,9 @@ func maxValidator(v reflect.Value, params []string, path string) (errors Errors)
 	}
 	max, _ := strconv.Atoi(params[0])
 	if v.Kind() == reflect.String && utf8.RuneCountInString(v.String()) > max {
-		errors.Add([]string{path}, MaxSizeError, "MaxSize")
+		errors.Add([]string{path}, MaxError, "MaxSize")
 	} else if v.Kind() == reflect.Slice && v.Len() > max {
-		errors.Add([]string{path}, MaxSizeError, "MaxSize")
+		errors.Add([]string{path}, MaxError, "MaxSize")
 	}
 	return
 }

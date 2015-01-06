@@ -59,7 +59,7 @@ func (val *Validate) validate(v reflect.Value, path string) Errors {
 		} else if field.ss == true && (value.Kind() == reflect.Slice || value.Kind() == reflect.Array) {
 			//slice and arrays
 			for i := 0; i < value.Len(); i++ {
-				if validateErrors := val.validate(value.Index(i), fmt.Sprintf("%s.%d.", path, i)); len(validateErrors) > 0 {
+				if validateErrors := val.validate(value.Index(i), fmt.Sprintf("%s.%d.", fieldPath, i)); len(validateErrors) > 0 {
 					errors = append(errors, validateErrors...)
 				}
 			}
