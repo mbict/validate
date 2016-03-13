@@ -1,31 +1,34 @@
-package validator
+package validate
 
 import (
 	"errors"
+	"github.com/mbict/go-tags"
 	"reflect"
-	"strings"
 	"unicode"
 )
 
+type Validator interface {
+	SetTag(tag string)
+	WithTag(tag string) Validator
+	SetValidationFunc(name string, vf ValidationFunc) error
+	Validate(v interface{}) error
+	Valid(val interface{}, tags string) error
+}
+
 // tag represents one of the tag items
 type tag struct {
-	Name  string         // name of the tag
-	Fn    ValidationFunc // validation function to call
-	Param string         // parameter to send to the validation function
+	*tags.Param                // name of the validator and the arguments to send to the validator func
+	Fn          ValidationFunc // validation function to call
 }
 
 // ValidationFunc is a function that receives the value of a
-// field and a parameter used for the respective validation tag.
-type ValidationFunc func(v interface{}, param string) error
+// field and the parameters used for the respective validation tag.
+type ValidationFunc func(v interface{}, params []string) error
 
 // Validator implements a validator
-type Validator struct {
-	// Tag name being used.
-	tagName string
-
-	// validationFuncs is a map of ValidationFuncs indexed
-	// by their name.
-	validationFuncs map[string]ValidationFunc
+type validator struct {
+	tagName         string                    // structure tag name being used (`validate`)
+	validationFuncs map[string]ValidationFunc // validator functions map indexed by name
 }
 
 // Helper validator so users can use the
@@ -33,15 +36,15 @@ type Validator struct {
 var defaultValidator = NewValidator()
 
 // NewValidator creates a new Validator
-func NewValidator() *Validator {
-	return &Validator{
+func NewValidator() Validator {
+	return &validator{
 		tagName: "validate",
 		validationFuncs: map[string]ValidationFunc{
-			"nonzero": nonzero,
-			"len":     length,
-			"min":     min,
-			"max":     max,
-			"regexp":  regex,
+			"required": required,
+			"len":      length,
+			"min":      min,
+			"max":      max,
+			"regexp":   regex,
 		},
 	}
 }
@@ -53,8 +56,8 @@ func SetTag(tag string) {
 
 // WithTag creates a new Validator with the new tag name. It is
 // useful to chain-call with Validate so we don't change the tag
-// name permanently: validator.WithTag("foo").Validate(t)
-func WithTag(tag string) *Validator {
+// name permanently: validate.WithTag("foo").Validate(t)
+func WithTag(tag string) Validator {
 	return defaultValidator.WithTag(tag)
 }
 
@@ -79,13 +82,13 @@ func Valid(val interface{}, tags string) error {
 }
 
 // SetTag allows you to change the tag name used in structs
-func (mv *Validator) SetTag(tag string) {
+func (mv *validator) SetTag(tag string) {
 	mv.tagName = tag
 }
 
 // WithTag creates a new Validator based on the current validator with
 // the new tag name.
-func (mv *Validator) WithTag(tag string) *Validator {
+func (mv *validator) WithTag(tag string) Validator {
 	v := mv.copy()
 	v.SetTag(tag)
 	return v
@@ -93,8 +96,8 @@ func (mv *Validator) WithTag(tag string) *Validator {
 
 // Copy creates a duplicate of the current validator and returns
 // the new instance
-func (mv *Validator) copy() *Validator {
-	return &Validator{
+func (mv *validator) copy() Validator {
+	return &validator{
 		tagName:         mv.tagName,
 		validationFuncs: mv.validationFuncs,
 	}
@@ -103,7 +106,7 @@ func (mv *Validator) copy() *Validator {
 // SetValidationFunc sets the function to be used for a given
 // validation constraint. Calling this function with nil vf
 // is the same as removing the constraint function from the list.
-func (mv *Validator) SetValidationFunc(name string, vf ValidationFunc) error {
+func (mv *validator) SetValidationFunc(name string, vf ValidationFunc) error {
 	if name == "" {
 		return errors.New("name cannot be empty")
 	}
@@ -118,12 +121,13 @@ func (mv *Validator) SetValidationFunc(name string, vf ValidationFunc) error {
 // Validate validates the fields of a struct based
 // on 'validator' tags and returns errors found indexed
 // by the field name.
-func (mv *Validator) Validate(v interface{}) error {
+func (mv *validator) Validate(v interface{}) error {
 	sv := reflect.ValueOf(v)
 	st := reflect.TypeOf(v)
 	if sv.Kind() == reflect.Ptr && !sv.IsNil() {
 		return mv.Validate(sv.Elem().Interface())
 	}
+
 	if sv.Kind() != reflect.Struct {
 		return ErrUnsupported
 	}
@@ -132,11 +136,13 @@ func (mv *Validator) Validate(v interface{}) error {
 	m := make(ErrorMap)
 	for i := 0; i < nfields; i++ {
 		f := sv.Field(i)
+
 		// deal with pointers
 		for f.Kind() == reflect.Ptr && !f.IsNil() {
 			f = f.Elem()
 		}
 		tag := st.Field(i).Tag.Get(mv.tagName)
+
 		if tag == "-" {
 			continue
 		}
@@ -153,6 +159,7 @@ func (mv *Validator) Validate(v interface{}) error {
 				}
 			}
 		}
+
 		if f.Kind() == reflect.Struct {
 			if !unicode.IsUpper(rune(fname[0])) {
 				continue
@@ -176,7 +183,7 @@ func (mv *Validator) Validate(v interface{}) error {
 
 // Valid validates a value based on the provided
 // tags and returns errors found or nil.
-func (mv *Validator) Valid(val interface{}, tags string) error {
+func (mv *validator) Valid(val interface{}, tags string) error {
 	if tags == "-" {
 		return nil
 	}
@@ -184,6 +191,7 @@ func (mv *Validator) Valid(val interface{}, tags string) error {
 	if v.Kind() == reflect.Ptr && !v.IsNil() {
 		return mv.Valid(v.Elem().Interface(), tags)
 	}
+
 	var err error
 	switch v.Kind() {
 	case reflect.Invalid:
@@ -194,8 +202,8 @@ func (mv *Validator) Valid(val interface{}, tags string) error {
 	return err
 }
 
-// validateVar validates one single variable
-func (mv *Validator) validateVar(v interface{}, tag string) error {
+// validateVar validates a single variable
+func (mv *validator) validateVar(v interface{}, tag string) error {
 	tags, err := mv.parseTags(tag)
 	if err != nil {
 		// unknown tag found.
@@ -203,7 +211,7 @@ func (mv *Validator) validateVar(v interface{}, tag string) error {
 	}
 	errs := make(Errors, 0, len(tags))
 	for _, t := range tags {
-		if err := t.Fn(v, t.Param); err != nil {
+		if err := t.Fn(v, t.Args); err != nil {
 			errs = append(errs, err)
 		}
 	}
@@ -213,26 +221,26 @@ func (mv *Validator) validateVar(v interface{}, tag string) error {
 	return nil
 }
 
-// parseTags parses all individual tags found within a struct tag.
-func (mv *Validator) parseTags(t string) ([]tag, error) {
-	tl := strings.Split(t, ",")
-	tags := make([]tag, 0, len(tl))
-	for _, i := range tl {
-		tg := tag{}
-		v := strings.SplitN(i, "=", 2)
-		tg.Name = strings.Trim(v[0], " ")
-		if tg.Name == "" {
-			return []tag{}, ErrUnknownTag
-		}
-		if len(v) > 1 {
-			tg.Param = strings.Trim(v[1], " ")
-		}
-		var found bool
-		if tg.Fn, found = mv.validationFuncs[tg.Name]; !found {
-			return []tag{}, ErrUnknownTag
-		}
-		tags = append(tags, tg)
+// parseTags parses all individual tags found within a struct tag and
+// resolve the validator function
+func (mv *validator) parseTags(t string) ([]tag, error) {
 
+	params, err := tags.Parse(t)
+	if err != nil {
+		return nil, ErrSyntax
+	}
+
+	tags := make([]tag, 0, len(params))
+	for _, param := range params {
+		validatorFunc, found := mv.validationFuncs[param.Name]
+		if !found {
+			return nil, ErrUnknownTag
+		}
+
+		tags = append(tags, tag{
+			Param: &param,
+			Fn:    validatorFunc,
+		})
 	}
 	return tags, nil
 }

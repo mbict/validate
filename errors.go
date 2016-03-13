@@ -1,4 +1,4 @@
-package validator
+package validate
 
 import (
 	"errors"
@@ -6,9 +6,8 @@ import (
 )
 
 var (
-	// ErrZeroValue is the error returned when variable has zero valud
-	// and nonzero was specified
-	ErrZeroValue = errors.New("zero value")
+	// ErrRequiredValue is the error returned when variable has a empty value
+	ErrRequired = errors.New("required")
 
 	// ErrMin is the error returned when variable is less than mininum
 	// value specified
@@ -32,8 +31,16 @@ var (
 
 	// ErrBadParameter is the error returned when an invalid parameter
 	// is provided to a validation rule (e.g. a string where an int was
-	// expected (max=foo,len=bar) or missing a parameter when one is required (len=))
+	// expected (max(foo),len=(bar))
 	ErrBadParameter = errors.New("bad parameter")
+
+	// ErrInvalidParameterCount is the error returned when there are not enough or
+	// to many parameters provided to the validation rule.
+	ErrInvalidParameterCount = errors.New("invalid parameter count")
+
+	// ErrSyntax is the error who is returned when a invalid syntax is detected
+	// while parsing the structure tag
+	ErrSyntax = errors.New("syntax error")
 
 	// ErrUnknownTag is the error returned when an unknown tag is found
 	ErrUnknownTag = errors.New("unknown tag")
