@@ -163,12 +163,12 @@ func (mv *validator) Validate(v interface{}) error {
 
 		if f.Kind() == reflect.Slice {
 
-			x := f.Type().Elem()
-			if x.Kind() == reflect.Ptr {
-				x = x.Elem()
+			t := f.Type().Elem()
+			if t.Kind() == reflect.Ptr {
+				t = t.Elem()
 			}
 
-			if x.Kind() == reflect.Struct {
+			if t.Kind() == reflect.Struct {
 				for i := 0; i < f.Len(); i++ {
 					e := mv.Validate(f.Index(i).Interface())
 					if e, ok := e.(ErrorMap); ok && len(e) > 0 {
@@ -261,5 +261,6 @@ func (mv *validator) parseTags(t string) ([]tag, error) {
 			Fn:    validatorFunc,
 		})
 	}
+
 	return tags, nil
 }

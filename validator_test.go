@@ -27,10 +27,11 @@ type testStruct struct {
 
 type testModel struct {
 	A   int    `validate:"required"`
-	B   string `validate:"len(8),min(6),max(4)"`
+	B   string `validate:"len(6),min(4),max(6)"`
 	Sub testStruct
 	D   *testSimple  `validate:"required"`
-	E   []testStruct `validate:"min(3),max(6)"` //<-- add a poniter variant too
+	E   []testStruct `validate:"min(3),max(6)"`
+	F   []*testSimple
 }
 
 func (ms *ValidatorSuite) TestValidate(c *C) {
@@ -58,6 +59,12 @@ func (ms *ValidatorSuite) TestValidate(c *C) {
 				C: 0.0,
 				D: &ptrEmptyStr,
 			},
+		},
+		F: []*testSimple{
+			&testSimple{0},
+			&testSimple{10},
+			&testSimple{20},
+			&testSimple{3},
 		},
 	}
 
@@ -99,6 +106,96 @@ func (ms *ValidatorSuite) TestValidate(c *C) {
 	c.Assert(errs["E.1.D"], HasLen, 1)
 	c.Assert(errs["E.1.D"], HasError, validate.ErrRequired)
 
+	c.Assert(errs["F"], HasLen, 0)
+	c.Assert(errs["F.0.A"], HasLen, 1)
+	c.Assert(errs["F.0.A"], HasError, validate.ErrMin)
+	c.Assert(errs["F.1.A"], HasLen, 0)
+	c.Assert(errs["F.2.A"], HasLen, 0)
+	c.Assert(errs["F.3.A"], HasLen, 1)
+	c.Assert(errs["F.3.A"], HasError, validate.ErrMin)
+}
+
+func (ms *ValidatorSuite) TestValidatePass(c *C) {
+	ptrStr := "foo"
+	t := testModel{
+		A: 1,
+		B: "abcdef",
+		Sub: testStruct{
+			A: 10,
+			C: 1.2,
+			D: &ptrStr,
+		},
+		D: &testSimple{10},
+		E: []testStruct{
+			testStruct{
+				A: 10,
+				C: 10.0,
+				D: &ptrStr,
+			},
+			testStruct{
+				A: 10,
+				C: 10.0,
+				D: &ptrStr,
+			},
+			testStruct{
+				A: 10,
+				C: 10.0,
+				D: &ptrStr,
+			},
+			testStruct{
+				A: 10,
+				C: 10.0,
+				D: &ptrStr,
+			},
+		},
+	}
+
+	err := validate.Validate(t)
+	c.Assert(err, IsNil)
+	/*
+		errs, ok := err.(validate.ErrorMap)
+
+		c.Assert(ok, Equals, true)
+		c.Assert(errs["A"], HasLen, 1)
+		c.Assert(errs["A"], HasError, validate.ErrRequired)
+		c.Assert(errs["B"], HasLen, 2)
+		c.Assert(errs["B"], HasError, validate.ErrLen)
+		c.Assert(errs["B"], HasError, validate.ErrMax)
+		c.Assert(errs["Sub.A"], HasLen, 1)
+		c.Assert(errs["Sub.A"], HasError, validate.ErrRequired)
+		c.Assert(errs["Sub.B"], HasLen, 0)
+		c.Assert(errs["Sub.C"], HasLen, 1)
+		c.Assert(errs["Sub.C"], HasError, validate.ErrMin)
+		c.Assert(errs["Sub.D"], HasLen, 1)
+		c.Assert(errs["Sub.D"], HasError, validate.ErrRequired)
+		c.Assert(errs["D"], HasLen, 0)
+		c.Assert(errs["D.A"], HasLen, 1)
+		c.Assert(errs["D.A"], HasError, validate.ErrMin)
+		c.Assert(errs["E"], HasLen, 1)
+		c.Assert(errs["E"], HasError, validate.ErrMin)
+
+		c.Assert(errs["E.0.A"], HasLen, 1)
+		c.Assert(errs["E.0.A"], HasError, validate.ErrRequired)
+		c.Assert(errs["E.0.B"], HasLen, 0)
+		c.Assert(errs["E.0.C"], HasLen, 0)
+		c.Assert(errs["E.0.D"], HasLen, 0)
+
+		c.Assert(errs["E.1.A"], HasLen, 0)
+		c.Assert(errs["E.1.B"], HasLen, 0)
+		c.Assert(errs["E.1.C"], HasLen, 2)
+		c.Assert(errs["E.1.C"], HasError, validate.ErrRequired)
+		c.Assert(errs["E.1.C"], HasError, validate.ErrMin)
+		c.Assert(errs["E.1.D"], HasLen, 1)
+		c.Assert(errs["E.1.D"], HasError, validate.ErrRequired)
+
+		c.Assert(errs["F"], HasLen, 0)
+		c.Assert(errs["F.0.A"], HasLen, 1)
+		c.Assert(errs["F.0.A"], HasError, validate.ErrMin)
+		c.Assert(errs["F.1.A"], HasLen, 0)
+		c.Assert(errs["F.2.A"], HasLen, 0)
+		c.Assert(errs["F.3.A"], HasLen, 1)
+		c.Assert(errs["F.3.A"], HasError, validate.ErrMin)
+	*/
 }
 
 /*
