@@ -1,6 +1,7 @@
 package validate_test
 
 import (
+	"github.com/mbict/go-validate"
 	. "gopkg.in/check.v1"
 	"testing"
 )
@@ -28,30 +29,34 @@ type testModel struct {
 	A   int    `validate:"required"`
 	B   string `validate:"len(8),min(6),max(4)"`
 	Sub testStruct
-	D   *testSimple `validate:"required"`
-	E   []testStruct
+	D   *testSimple  `validate:"required"`
+	E   []testStruct `validate:"min(3),max(6)"` //<-- add a poniter variant too
 }
 
 func (ms *ValidatorSuite) TestValidate(c *C) {
-	t := testStruct{
+	ptrEmptyStr := ""
+	ptrString := "abc"
+	t := testModel{
 		A: 0,
-		B: "12345",
+		B: "abcdefg",
 		Sub: testStruct{
-			A: 1,
-			B: "",
-			C: 0.0,
+			A: 0,
+			B: "x",
+			C: 0.2,
 		},
-		D: &testSimple{10},
+		D: &testSimple{2},
 		E: []testStruct{
 			testStruct{
-				A: 1,
-				B: "",
-				C: 0.0,
+				A: 0,
+				B: "x",
+				C: 10.0,
+				D: &ptrString,
 			},
 			testStruct{
-				A: 1,
-				B: "",
+				A: 5,
+				B: "y",
 				C: 0.0,
+				D: &ptrEmptyStr,
 			},
 		},
 	}
@@ -60,15 +65,40 @@ func (ms *ValidatorSuite) TestValidate(c *C) {
 	c.Assert(err, NotNil)
 
 	errs, ok := err.(validate.ErrorMap)
+
 	c.Assert(ok, Equals, true)
+	c.Assert(errs["A"], HasLen, 1)
 	c.Assert(errs["A"], HasError, validate.ErrRequired)
+	c.Assert(errs["B"], HasLen, 2)
 	c.Assert(errs["B"], HasError, validate.ErrLen)
-	c.Assert(errs["B"], HasError, validate.ErrMin)
 	c.Assert(errs["B"], HasError, validate.ErrMax)
-	c.Assert(errs["Sub.A"], HasLen, 0)
+	c.Assert(errs["Sub.A"], HasLen, 1)
+	c.Assert(errs["Sub.A"], HasError, validate.ErrRequired)
 	c.Assert(errs["Sub.B"], HasLen, 0)
-	c.Assert(errs["Sub.C"], HasLen, 2)
+	c.Assert(errs["Sub.C"], HasLen, 1)
+	c.Assert(errs["Sub.C"], HasError, validate.ErrMin)
+	c.Assert(errs["Sub.D"], HasLen, 1)
 	c.Assert(errs["Sub.D"], HasError, validate.ErrRequired)
+	c.Assert(errs["D"], HasLen, 0)
+	c.Assert(errs["D.A"], HasLen, 1)
+	c.Assert(errs["D.A"], HasError, validate.ErrMin)
+	c.Assert(errs["E"], HasLen, 1)
+	c.Assert(errs["E"], HasError, validate.ErrMin)
+
+	c.Assert(errs["E.0.A"], HasLen, 1)
+	c.Assert(errs["E.0.A"], HasError, validate.ErrRequired)
+	c.Assert(errs["E.0.B"], HasLen, 0)
+	c.Assert(errs["E.0.C"], HasLen, 0)
+	c.Assert(errs["E.0.D"], HasLen, 0)
+
+	c.Assert(errs["E.1.A"], HasLen, 0)
+	c.Assert(errs["E.1.B"], HasLen, 0)
+	c.Assert(errs["E.1.C"], HasLen, 2)
+	c.Assert(errs["E.1.C"], HasError, validate.ErrRequired)
+	c.Assert(errs["E.1.C"], HasError, validate.ErrMin)
+	c.Assert(errs["E.1.D"], HasLen, 1)
+	c.Assert(errs["E.1.D"], HasError, validate.ErrRequired)
+
 }
 
 /*
@@ -368,7 +398,7 @@ type hasErrorChecker struct {
 
 func (c *hasErrorChecker) Check(params []interface{}, names []string) (bool, string) {
 	var (
-		ok bool
+		ok    bool
 		slice []error
 		value error
 	)

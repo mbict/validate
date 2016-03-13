@@ -2,6 +2,7 @@ package validate
 
 import (
 	"errors"
+	"fmt"
 	"github.com/mbict/go-tags"
 	"reflect"
 	"unicode"
@@ -160,7 +161,25 @@ func (mv *validator) Validate(v interface{}) error {
 			}
 		}
 
-		if f.Kind() == reflect.Struct {
+		if f.Kind() == reflect.Slice {
+
+			x := f.Type().Elem()
+			if x.Kind() == reflect.Ptr {
+				x = x.Elem()
+			}
+
+			if x.Kind() == reflect.Struct {
+				for i := 0; i < f.Len(); i++ {
+					e := mv.Validate(f.Index(i).Interface())
+					if e, ok := e.(ErrorMap); ok && len(e) > 0 {
+						for j, k := range e {
+							field := fmt.Sprintf("%s.%d.%s", fname, i, j)
+							m[field] = k
+						}
+					}
+				}
+			}
+		} else if f.Kind() == reflect.Struct {
 			if !unicode.IsUpper(rune(fname[0])) {
 				continue
 			}
