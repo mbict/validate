@@ -114,8 +114,6 @@ func min(v interface{}, params []string) error {
 		if err != nil {
 			return ErrBadParameter
 		}
-
-		fmt.Println(int64(st.Len()), p)
 		invalid = int64(st.Len()) < p
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		p, err := asInt(params[0])

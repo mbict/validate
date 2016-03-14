@@ -32,6 +32,47 @@ type testModel struct {
 	D   *testSimple  `validate:"required"`
 	E   []testStruct `validate:"min(3),max(6)"`
 	F   []*testSimple
+	g   int `validate:"required"` // should be ignored
+}
+
+func (ms *ValidatorSuite) TestValidateEmbedStruct(c *C) {
+
+}
+
+func (ms *ValidatorSuite) TestValidateSlice(c *C) {
+	v := []testModel struct{
+		A   []testStruct `validate:"min(3),max(6)"`
+		B   []*testSimple  `validate:"min(3),max(6)"`
+	}
+	{
+		{
+			A: nil,
+			B: nil,
+		},{
+			A: make([]testStruct{},0),
+			B: make([]*testStruct{},0),
+		},{
+			A: make([]testStruct{},0),
+			B: make([]*testStruct{},0),
+		},
+
+	}
+}
+
+func (ms *ValidatorSuite) TestValidateIgnoreNonExportedVars(c *C) {
+	v := []testModel struct{
+		A   int    `validate:"required"`
+		b   int `validate:"required"`
+	}
+	{
+		{
+			A: 0,
+			b: 0,
+		}, {
+			A: 1,
+			b: 1,
+		},
+	}
 }
 
 func (ms *ValidatorSuite) TestValidate(c *C) {
@@ -89,6 +130,8 @@ func (ms *ValidatorSuite) TestValidate(c *C) {
 	c.Assert(errs["D"], HasLen, 0)
 	c.Assert(errs["D.A"], HasLen, 1)
 	c.Assert(errs["D.A"], HasError, validate.ErrMin)
+
+	//struct slices
 	c.Assert(errs["E"], HasLen, 1)
 	c.Assert(errs["E"], HasError, validate.ErrMin)
 
@@ -97,7 +140,6 @@ func (ms *ValidatorSuite) TestValidate(c *C) {
 	c.Assert(errs["E.0.B"], HasLen, 0)
 	c.Assert(errs["E.0.C"], HasLen, 0)
 	c.Assert(errs["E.0.D"], HasLen, 0)
-
 	c.Assert(errs["E.1.A"], HasLen, 0)
 	c.Assert(errs["E.1.B"], HasLen, 0)
 	c.Assert(errs["E.1.C"], HasLen, 2)
@@ -106,6 +148,7 @@ func (ms *ValidatorSuite) TestValidate(c *C) {
 	c.Assert(errs["E.1.D"], HasLen, 1)
 	c.Assert(errs["E.1.D"], HasError, validate.ErrRequired)
 
+	//pointer struct slices
 	c.Assert(errs["F"], HasLen, 0)
 	c.Assert(errs["F.0.A"], HasLen, 1)
 	c.Assert(errs["F.0.A"], HasError, validate.ErrMin)
@@ -113,6 +156,9 @@ func (ms *ValidatorSuite) TestValidate(c *C) {
 	c.Assert(errs["F.2.A"], HasLen, 0)
 	c.Assert(errs["F.3.A"], HasLen, 1)
 	c.Assert(errs["F.3.A"], HasError, validate.ErrMin)
+
+	//non exported vars are not checked at all
+	c.Assert(errs["g"], HasLen, 0)
 }
 
 func (ms *ValidatorSuite) TestValidatePass(c *C) {
@@ -152,50 +198,6 @@ func (ms *ValidatorSuite) TestValidatePass(c *C) {
 
 	err := validate.Validate(t)
 	c.Assert(err, IsNil)
-	/*
-		errs, ok := err.(validate.ErrorMap)
-
-		c.Assert(ok, Equals, true)
-		c.Assert(errs["A"], HasLen, 1)
-		c.Assert(errs["A"], HasError, validate.ErrRequired)
-		c.Assert(errs["B"], HasLen, 2)
-		c.Assert(errs["B"], HasError, validate.ErrLen)
-		c.Assert(errs["B"], HasError, validate.ErrMax)
-		c.Assert(errs["Sub.A"], HasLen, 1)
-		c.Assert(errs["Sub.A"], HasError, validate.ErrRequired)
-		c.Assert(errs["Sub.B"], HasLen, 0)
-		c.Assert(errs["Sub.C"], HasLen, 1)
-		c.Assert(errs["Sub.C"], HasError, validate.ErrMin)
-		c.Assert(errs["Sub.D"], HasLen, 1)
-		c.Assert(errs["Sub.D"], HasError, validate.ErrRequired)
-		c.Assert(errs["D"], HasLen, 0)
-		c.Assert(errs["D.A"], HasLen, 1)
-		c.Assert(errs["D.A"], HasError, validate.ErrMin)
-		c.Assert(errs["E"], HasLen, 1)
-		c.Assert(errs["E"], HasError, validate.ErrMin)
-
-		c.Assert(errs["E.0.A"], HasLen, 1)
-		c.Assert(errs["E.0.A"], HasError, validate.ErrRequired)
-		c.Assert(errs["E.0.B"], HasLen, 0)
-		c.Assert(errs["E.0.C"], HasLen, 0)
-		c.Assert(errs["E.0.D"], HasLen, 0)
-
-		c.Assert(errs["E.1.A"], HasLen, 0)
-		c.Assert(errs["E.1.B"], HasLen, 0)
-		c.Assert(errs["E.1.C"], HasLen, 2)
-		c.Assert(errs["E.1.C"], HasError, validate.ErrRequired)
-		c.Assert(errs["E.1.C"], HasError, validate.ErrMin)
-		c.Assert(errs["E.1.D"], HasLen, 1)
-		c.Assert(errs["E.1.D"], HasError, validate.ErrRequired)
-
-		c.Assert(errs["F"], HasLen, 0)
-		c.Assert(errs["F.0.A"], HasLen, 1)
-		c.Assert(errs["F.0.A"], HasError, validate.ErrMin)
-		c.Assert(errs["F.1.A"], HasLen, 0)
-		c.Assert(errs["F.2.A"], HasLen, 0)
-		c.Assert(errs["F.3.A"], HasLen, 1)
-		c.Assert(errs["F.3.A"], HasError, validate.ErrMin)
-	*/
 }
 
 /*
@@ -495,7 +497,7 @@ type hasErrorChecker struct {
 
 func (c *hasErrorChecker) Check(params []interface{}, names []string) (bool, string) {
 	var (
-		ok    bool
+		ok bool
 		slice []error
 		value error
 	)

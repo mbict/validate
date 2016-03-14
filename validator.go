@@ -18,8 +18,8 @@ type Validator interface {
 
 // tag represents one of the tag items
 type tag struct {
-	*tags.Param                // name of the validator and the arguments to send to the validator func
-	Fn          ValidationFunc // validation function to call
+	tags.Param                // name of the validator and the arguments to send to the validator func
+	Fn         ValidationFunc // validation function to call
 }
 
 // ValidationFunc is a function that receives the value of a
@@ -147,9 +147,13 @@ func (mv *validator) Validate(v interface{}) error {
 		if tag == "-" {
 			continue
 		}
-		fname := st.Field(i).Name
-		var errs Errors
 
+		fname := st.Field(i).Name
+		if !unicode.IsUpper(rune(fname[0])) {
+			continue
+		}
+
+		var errs Errors
 		if tag != "" {
 			err := mv.Valid(f.Interface(), tag)
 			if errors, ok := err.(Errors); ok {
@@ -162,7 +166,6 @@ func (mv *validator) Validate(v interface{}) error {
 		}
 
 		if f.Kind() == reflect.Slice {
-
 			t := f.Type().Elem()
 			if t.Kind() == reflect.Ptr {
 				t = t.Elem()
@@ -180,9 +183,7 @@ func (mv *validator) Validate(v interface{}) error {
 				}
 			}
 		} else if f.Kind() == reflect.Struct {
-			if !unicode.IsUpper(rune(fname[0])) {
-				continue
-			}
+
 			e := mv.Validate(f.Interface())
 			if e, ok := e.(ErrorMap); ok && len(e) > 0 {
 				for j, k := range e {
@@ -190,10 +191,12 @@ func (mv *validator) Validate(v interface{}) error {
 				}
 			}
 		}
+
 		if len(errs) > 0 {
 			m[st.Field(i).Name] = errs
 		}
 	}
+
 	if len(m) > 0 {
 		return m
 	}
@@ -257,10 +260,9 @@ func (mv *validator) parseTags(t string) ([]tag, error) {
 		}
 
 		tags = append(tags, tag{
-			Param: &param,
+			Param: param,
 			Fn:    validatorFunc,
 		})
 	}
-
 	return tags, nil
 }
