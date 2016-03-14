@@ -237,6 +237,26 @@ func (ms *ValidatorSuite) TestValidateIgnoreNonExportedVars(c *C) {
 	c.Assert(err, IsNil)
 }
 
+func (ms *ValidatorSuite) TestValidateInputNilValue(c *C) {
+	c.Assert(validate.Validate(nil), Equals, validate.ErrUnsupported)
+	c.Assert(validate.Validate( (*testSimple)(nil) ), Equals, validate.ErrUnsupported)
+}
+
+func (ms *ValidatorSuite) TestValid(c *C) {
+}
+
+func (ms *ValidatorSuite) TestValidInvalidTag(c *C) {
+	i := 1;
+
+	c.Assert(validate.Valid(i, "min(10)|bv"), IsNil)
+}
+
+func (ms *ValidatorSuite) TestValidIgnoreTagReturnNil(c *C) {
+	i := 1;
+
+	c.Assert(validate.Valid(i, "-"), IsNil)
+}
+
 /*
 go func TestName(t *testing.T) {
 

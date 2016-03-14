@@ -246,7 +246,6 @@ func (mv *validator) validateVar(v interface{}, tag string) error {
 // parseTags parses all individual tags found within a struct tag and
 // resolve the validator function
 func (mv *validator) parseTags(t string) ([]tag, error) {
-
 	params, err := tags.Parse(t)
 	if err != nil {
 		return nil, ErrSyntax
