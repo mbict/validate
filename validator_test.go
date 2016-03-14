@@ -1,6 +1,7 @@
 package validate_test
 
 import (
+	//"github.com/mbict/go-validate"
 	"github.com/mbict/go-validate"
 	. "gopkg.in/check.v1"
 	"testing"
@@ -18,53 +19,200 @@ type testSimple struct {
 	A int `validate:"min(10)"`
 }
 
-type testStruct struct {
-	A int `validate:"required"`
-	B string
-	C float64 `validate:"required,min(1)"`
-	D *string `validate:"required"`
-}
+func (ms *ValidatorSuite) TestValidate(c *C) {
+	emptyStr := ""
+	fullStr := "abc"
+	var test = []struct {
+		A int     `validate:"required;min(3);max(6)"`
+		B string  `validate:"required;min(3);max(6)"`
+		C *string `validate:"required"`
+		D bool    `validate:"required"`
+		E float64 `validate:"required;min(1.5);max(3)"`
+	}{
+		{
+			A: 0,
+			B: "",
+			C: nil,
+			D: false,
+			E: 0,
+		}, {
+			A: 10,
+			B: "abcdefgh",
+			C: &emptyStr,
+			D: true,
+			E: 500.12,
+		}, {
+			A: 4,
+			B: "abcd",
+			C: &fullStr,
+			D: true,
+			E: 2.5,
+		},
+	}
 
-type testModel struct {
-	A   int    `validate:"required"`
-	B   string `validate:"len(6),min(4),max(6)"`
-	Sub testStruct
-	D   *testSimple  `validate:"required"`
-	E   []testStruct `validate:"min(3),max(6)"`
-	F   []*testSimple
-	g   int `validate:"required"` // should be ignored
+	//error, empty values & nil ptr
+	err := validate.Validate(test[0])
+	c.Assert(err, NotNil)
+
+	errs, ok := err.(validate.ErrorMap)
+	c.Assert(ok, Equals, true)
+	c.Assert(errs["A"], HasLen, 2)
+	c.Assert(errs["A"], HasError, validate.ErrRequired)
+	c.Assert(errs["A"], HasError, validate.ErrMin)
+	c.Assert(errs["B"], HasLen, 2)
+	c.Assert(errs["B"], HasError, validate.ErrRequired)
+	c.Assert(errs["B"], HasError, validate.ErrMin)
+	c.Assert(errs["C"], HasLen, 1)
+	c.Assert(errs["C"], HasError, validate.ErrRequired)
+	c.Assert(errs["D"], HasLen, 1)
+	c.Assert(errs["D"], HasError, validate.ErrRequired)
+	c.Assert(errs["E"], HasLen, 2)
+	c.Assert(errs["E"], HasError, validate.ErrRequired)
+	c.Assert(errs["E"], HasError, validate.ErrMin)
+
+	//error, invalid values and empty string ptr
+	err = validate.Validate(test[1])
+	c.Assert(err, NotNil)
+
+	errs, ok = err.(validate.ErrorMap)
+	c.Assert(ok, Equals, true)
+	c.Assert(errs["A"], HasLen, 1)
+	c.Assert(errs["A"], HasError, validate.ErrMax)
+	c.Assert(errs["B"], HasLen, 1)
+	c.Assert(errs["B"], HasError, validate.ErrMax)
+	c.Assert(errs["C"], HasLen, 1)
+	c.Assert(errs["C"], HasError, validate.ErrRequired)
+	c.Assert(errs["D"], HasLen, 0)
+	c.Assert(errs["E"], HasLen, 1)
+	c.Assert(errs["E"], HasError, validate.ErrMax)
+
+	//should pass
+	err = validate.Validate(test[2])
+	c.Assert(err, IsNil)
 }
 
 func (ms *ValidatorSuite) TestValidateEmbedStruct(c *C) {
+	var test = []struct {
+		A testSimple
+		B *testSimple `validate:"required"`
+	}{
+		{
+			B: nil,
+		}, {
+			A: testSimple{1},
+			B: &testSimple{3},
+		}, {
+			A: testSimple{11},
+			B: &testSimple{12},
+		},
+	}
 
+	//error, nil ptr / empty values
+	err := validate.Validate(test[0])
+	c.Assert(err, NotNil)
+
+	errs, ok := err.(validate.ErrorMap)
+	c.Assert(ok, Equals, true)
+	c.Assert(errs["A.A"], HasLen, 1)
+	c.Assert(errs["A.A"], HasError, validate.ErrMin)
+	c.Assert(errs["B"], HasLen, 1)
+	c.Assert(errs["B"], HasError, validate.ErrRequired)
+	c.Assert(errs["B.A"], HasLen, 0)
+
+	//error, initialized ptr
+	err = validate.Validate(test[1])
+	c.Assert(err, NotNil)
+
+	errs, ok = err.(validate.ErrorMap)
+	c.Assert(ok, Equals, true)
+	c.Assert(errs["B"], HasLen, 0)
+	c.Assert(errs["B.A"], HasLen, 1)
+	c.Assert(errs["B.A"], HasError, validate.ErrMin)
+
+	//error, initialized ptr
+	err = validate.Validate(test[1])
+	c.Assert(err, NotNil)
+
+	errs, ok = err.(validate.ErrorMap)
+	c.Assert(ok, Equals, true)
+	c.Assert(errs["B"], HasLen, 0)
+	c.Assert(errs["B.A"], HasLen, 1)
+	c.Assert(errs["B.A"], HasError, validate.ErrMin)
+
+	//should pass
+	err = validate.Validate(test[2])
+	c.Assert(err, IsNil)
 }
 
 func (ms *ValidatorSuite) TestValidateSlice(c *C) {
-	v := []testModel struct{
-		A   []testStruct `validate:"min(3),max(6)"`
-		B   []*testSimple  `validate:"min(3),max(6)"`
-	}
-	{
+	var test = []struct {
+		A []testSimple  `validate:"required,min(3),max(6)"`
+		B []*testSimple `validate:"required,max(6)"`
+	}{
 		{
 			A: nil,
 			B: nil,
-		},{
-			A: make([]testStruct{},0),
-			B: make([]*testStruct{},0),
-		},{
-			A: make([]testStruct{},0),
-			B: make([]*testStruct{},0),
+		}, {
+			A: []testSimple{},
+			B: []*testSimple{},
+		}, {
+			A: []testSimple{{1}, {11}},
+			B: []*testSimple{&testSimple{11}, &testSimple{3}},
+		}, {
+			A: []testSimple{{11}, {12}, {13}},
+			B: []*testSimple{&testSimple{11}},
 		},
-
 	}
+
+	//error, nil slices
+	err := validate.Validate(test[0])
+	c.Assert(err, NotNil)
+
+	errs, ok := err.(validate.ErrorMap)
+	c.Assert(ok, Equals, true)
+	c.Assert(errs["A"], HasLen, 2)
+	c.Assert(errs["A"], HasError, validate.ErrMin)
+	c.Assert(errs["A"], HasError, validate.ErrRequired)
+	c.Assert(errs["B"], HasLen, 1)
+	c.Assert(errs["B"], HasError, validate.ErrRequired)
+
+	//error, zero length slices
+	err = validate.Validate(test[1])
+	c.Assert(err, NotNil)
+
+	errs, ok = err.(validate.ErrorMap)
+	c.Assert(ok, Equals, true)
+	c.Assert(errs["A"], HasLen, 2)
+	c.Assert(errs["A"], HasError, validate.ErrMin)
+	c.Assert(errs["A"], HasError, validate.ErrRequired)
+	c.Assert(errs["B"], HasLen, 1)
+	c.Assert(errs["B"], HasError, validate.ErrRequired)
+
+	//error, filled slices
+	err = validate.Validate(test[2])
+	c.Assert(err, NotNil)
+
+	errs, ok = err.(validate.ErrorMap)
+	c.Assert(ok, Equals, true)
+	c.Assert(errs["A"], HasLen, 1)
+	c.Assert(errs["A"], HasError, validate.ErrMin)
+	c.Assert(errs["A.0.A"], HasLen, 1)
+	c.Assert(errs["A.0.A"], HasError, validate.ErrMin)
+	c.Assert(errs["B"], HasLen, 0)
+	c.Assert(errs["B.0.A"], HasLen, 0)
+	c.Assert(errs["B.1.A"], HasLen, 1)
+	c.Assert(errs["B.1.A"], HasError, validate.ErrMin)
+
+	//should pass
+	err = validate.Validate(test[3])
+	c.Assert(err, IsNil)
 }
 
 func (ms *ValidatorSuite) TestValidateIgnoreNonExportedVars(c *C) {
-	v := []testModel struct{
-		A   int    `validate:"required"`
-		b   int `validate:"required"`
-	}
-	{
+	var test = []struct {
+		A int `validate:"required"`
+		b int `validate:"required"`
+	}{
 		{
 			A: 0,
 			b: 0,
@@ -73,135 +221,26 @@ func (ms *ValidatorSuite) TestValidateIgnoreNonExportedVars(c *C) {
 			b: 1,
 		},
 	}
-}
 
-func (ms *ValidatorSuite) TestValidate(c *C) {
-	ptrEmptyStr := ""
-	ptrString := "abc"
-	t := testModel{
-		A: 0,
-		B: "abcdefg",
-		Sub: testStruct{
-			A: 0,
-			B: "x",
-			C: 0.2,
-		},
-		D: &testSimple{2},
-		E: []testStruct{
-			testStruct{
-				A: 0,
-				B: "x",
-				C: 10.0,
-				D: &ptrString,
-			},
-			testStruct{
-				A: 5,
-				B: "y",
-				C: 0.0,
-				D: &ptrEmptyStr,
-			},
-		},
-		F: []*testSimple{
-			&testSimple{0},
-			&testSimple{10},
-			&testSimple{20},
-			&testSimple{3},
-		},
-	}
-
-	err := validate.Validate(t)
+	//error, nil ptr / empty values
+	err := validate.Validate(test[0])
 	c.Assert(err, NotNil)
 
 	errs, ok := err.(validate.ErrorMap)
-
 	c.Assert(ok, Equals, true)
 	c.Assert(errs["A"], HasLen, 1)
 	c.Assert(errs["A"], HasError, validate.ErrRequired)
-	c.Assert(errs["B"], HasLen, 2)
-	c.Assert(errs["B"], HasError, validate.ErrLen)
-	c.Assert(errs["B"], HasError, validate.ErrMax)
-	c.Assert(errs["Sub.A"], HasLen, 1)
-	c.Assert(errs["Sub.A"], HasError, validate.ErrRequired)
-	c.Assert(errs["Sub.B"], HasLen, 0)
-	c.Assert(errs["Sub.C"], HasLen, 1)
-	c.Assert(errs["Sub.C"], HasError, validate.ErrMin)
-	c.Assert(errs["Sub.D"], HasLen, 1)
-	c.Assert(errs["Sub.D"], HasError, validate.ErrRequired)
-	c.Assert(errs["D"], HasLen, 0)
-	c.Assert(errs["D.A"], HasLen, 1)
-	c.Assert(errs["D.A"], HasError, validate.ErrMin)
+	c.Assert(errs["b"], HasLen, 0)
 
-	//struct slices
-	c.Assert(errs["E"], HasLen, 1)
-	c.Assert(errs["E"], HasError, validate.ErrMin)
-
-	c.Assert(errs["E.0.A"], HasLen, 1)
-	c.Assert(errs["E.0.A"], HasError, validate.ErrRequired)
-	c.Assert(errs["E.0.B"], HasLen, 0)
-	c.Assert(errs["E.0.C"], HasLen, 0)
-	c.Assert(errs["E.0.D"], HasLen, 0)
-	c.Assert(errs["E.1.A"], HasLen, 0)
-	c.Assert(errs["E.1.B"], HasLen, 0)
-	c.Assert(errs["E.1.C"], HasLen, 2)
-	c.Assert(errs["E.1.C"], HasError, validate.ErrRequired)
-	c.Assert(errs["E.1.C"], HasError, validate.ErrMin)
-	c.Assert(errs["E.1.D"], HasLen, 1)
-	c.Assert(errs["E.1.D"], HasError, validate.ErrRequired)
-
-	//pointer struct slices
-	c.Assert(errs["F"], HasLen, 0)
-	c.Assert(errs["F.0.A"], HasLen, 1)
-	c.Assert(errs["F.0.A"], HasError, validate.ErrMin)
-	c.Assert(errs["F.1.A"], HasLen, 0)
-	c.Assert(errs["F.2.A"], HasLen, 0)
-	c.Assert(errs["F.3.A"], HasLen, 1)
-	c.Assert(errs["F.3.A"], HasError, validate.ErrMin)
-
-	//non exported vars are not checked at all
-	c.Assert(errs["g"], HasLen, 0)
-}
-
-func (ms *ValidatorSuite) TestValidatePass(c *C) {
-	ptrStr := "foo"
-	t := testModel{
-		A: 1,
-		B: "abcdef",
-		Sub: testStruct{
-			A: 10,
-			C: 1.2,
-			D: &ptrStr,
-		},
-		D: &testSimple{10},
-		E: []testStruct{
-			testStruct{
-				A: 10,
-				C: 10.0,
-				D: &ptrStr,
-			},
-			testStruct{
-				A: 10,
-				C: 10.0,
-				D: &ptrStr,
-			},
-			testStruct{
-				A: 10,
-				C: 10.0,
-				D: &ptrStr,
-			},
-			testStruct{
-				A: 10,
-				C: 10.0,
-				D: &ptrStr,
-			},
-		},
-	}
-
-	err := validate.Validate(t)
+	//error, initialized ptr
+	err = validate.Validate(test[1])
 	c.Assert(err, IsNil)
 }
 
 /*
+go func TestName(t *testing.T) {
 
+}
 func (ms *ValidatorSuite) TestValidSlice(c *C) {
 	s := make([]int, 0, 10)
 	err := validator.Valid(s, "required")
@@ -497,7 +536,7 @@ type hasErrorChecker struct {
 
 func (c *hasErrorChecker) Check(params []interface{}, names []string) (bool, string) {
 	var (
-		ok bool
+		ok    bool
 		slice []error
 		value error
 	)

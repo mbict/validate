@@ -1,7 +1,6 @@
 package validate
 
 import (
-	"fmt"
 	"reflect"
 	"regexp"
 	"strconv"
