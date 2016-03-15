@@ -72,14 +72,39 @@ type ErrorMap map[string]Errors
 // ErrorMap implements the Error interface and returns all the fields
 // who has errors in a cimma delimited string
 func (err ErrorMap) Error() string {
+	result := ""
 	for k, errs := range err {
 		if len(errs) > 0 {
-			result := fmt.Sprintf("%s: %s", k, errs[0].Error())
-			for _, err := range errs[1:] {
-				result = result + ", " + fmt.Sprintf("%s: %s", k, err.Error())
+			if len(result) > 0 {
+				result = fmt.Sprintf("%s, %s:[%s]", result, k, errs.Error())
+			} else {
+				result = fmt.Sprintf("%s:[%s]", k, errs.Error())
 			}
-			return result
 		}
 	}
-	return ""
+	return result
+}
+
+// HasErrors is a helper function to check if there is a error in the ErrorMap for the
+// corresponding field name. Handy for use with the template funcion map
+func HasErrors(errors ErrorMap, field string) bool {
+	errs, ok := errors[field]
+	return ok && len(errs) > 0
+}
+
+// HasError is a helper function to check if there is a specific error in the ErrorMap
+// for the corresponding field name that matches the erro string.
+// Handy for use with the template funcion map
+func HasError(errors ErrorMap, field string, error string) bool {
+	errs, ok := errors[field]
+	if !ok {
+		return false
+	}
+
+	for _, err := range errs {
+		if err.Error() == error {
+			return true
+		}
+	}
+	return false
 }

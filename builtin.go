@@ -216,11 +216,48 @@ func regex(v interface{}, params []string) error {
 	return nil
 }
 
-func in(v interface{}, params []string) error {
+func between(v interface{}, params []string) error {
 	return nil
 }
 
-func notIn(v interface{}, params []string) error {
+func contain(v interface{}, params []string) error {
+	return nil
+}
+
+func include(v interface{}, params []string) error {
+	return nil
+}
+
+func exclude(v interface{}, params []string) error {
+	return nil
+}
+
+//utility functions
+
+var alphaDashPattern = regexp.MustCompile("[^\\d\\w-_]")
+
+func alphaDash(v interface{}, params []string) error {
+	/*if alphaDashPattern.MatchString(fmt.Sprintf("%v", v.Interface())) {
+		errors.Add([]string{path}, AlphaDashError, "AlphaDash")
+	}*/
+	return nil
+}
+
+var alphaDashDotPattern = regexp.MustCompile("[^\\d\\w-_\\.]")
+
+func alphaDashDot(v interface{}, params []string) error {
+	return nil
+}
+
+var emailPattern = regexp.MustCompile("[\\w!#$%&'*+/=?^_`{|}~-]+(?:\\.[\\w!#$%&'*+/=?^_`{|}~-]+)*@(?:[\\w](?:[\\w-]*[\\w])?\\.)+[a-zA-Z0-9](?:[\\w-]*[\\w])?")
+
+func email(v interface{}, params []string) error {
+	return nil
+}
+
+var urlPattern = regexp.MustCompile(`(http|https):\/\/[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?`)
+
+func url(v interface{}, params []string) error {
 	return nil
 }
 

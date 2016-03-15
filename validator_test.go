@@ -267,31 +267,39 @@ func (vs *ValidatorSuite) TestValidIgnoreTagReturnNil(c *C) {
 	c.Assert(err, IsNil)
 }
 
-/*
+func (vs *ValidatorSuite) TestValidateIgnoreTag(c *C) {
+	test := struct {
+		A testSimple `validate:"-"`
+	}{}
 
+	err := validate.Validate(test)
+
+	c.Assert(err, IsNil)
+}
 
 func (vs *ValidatorSuite) TestValidMap(c *C) {
 	m := make(map[string]string)
-	err := validator.Valid(m, "required")
+
+	err := validate.Valid(m, "required")
 	c.Assert(err, NotNil)
 	errs, ok := err.(validate.Errors)
 	c.Assert(ok, Equals, true)
 	c.Assert(errs, HasError, validate.ErrRequired)
 
-	err = validator.Valid(m, "min=1")
+	err = validate.Valid(m, "min(1)")
 	c.Assert(err, NotNil)
 	errs, ok = err.(validate.Errors)
 	c.Assert(ok, Equals, true)
 	c.Assert(errs, HasError, validate.ErrMin)
 
 	m = map[string]string{"A": "a", "B": "a"}
-	err = validator.Valid(m, "max=1")
+	err = validate.Valid(m, "max(1)")
 	c.Assert(err, NotNil)
 	errs, ok = err.(validate.Errors)
 	c.Assert(ok, Equals, true)
 	c.Assert(errs, HasError, validate.ErrMax)
 
-	err = validator.Valid(m, "min=2, max=5")
+	err = validate.Valid(m, "min(2), max(5)")
 	c.Assert(err, IsNil)
 
 	m = map[string]string{
@@ -301,7 +309,7 @@ func (vs *ValidatorSuite) TestValidMap(c *C) {
 		"4": "d",
 		"5": "e",
 	}
-	err = validator.Valid(m, "len=4,min=6,max=1,required")
+	err = validate.Valid(m, "len(4),min(6),max(1),required")
 	c.Assert(err, NotNil)
 	errs, ok = err.(validate.Errors)
 	c.Assert(ok, Equals, true)
@@ -311,7 +319,6 @@ func (vs *ValidatorSuite) TestValidMap(c *C) {
 	c.Assert(errs, Not(HasError), validate.ErrRequired)
 
 }
-*/
 
 func (vs *ValidatorSuite) TestValidFloat(c *C) {
 	err := validate.Valid(12.34, "required")
@@ -373,48 +380,32 @@ func (vs *ValidatorSuite) TestValidString(c *C) {
 	c.Assert(errs, Not(HasError), validate.ErrMax)
 }
 
-func (vs *ValidatorSuite) TestValidateWithStruct(c *C) {
-
-	test := []struct {
-		A int    `max(10),min(4)`
-		B string `required`
-	}{
-		{
-			A: 6,
-			B: "abcdef",
-		}, {
-			A: 1,
-			B: "",
-		},
-	}
-
-	err := validate.Valid(test[0], ``)
+func (vs *ValidatorSuite) TestValidPtr(c *C) {
+	s := "test1234"
+	err := validate.Valid(&s, "len(8)")
 	c.Assert(err, IsNil)
 
-	err := validate.Valid(test[1], ``)
-	c.Assert(err, IsNil)
-
-	/*
-		err = validator.Valid("foo", `equals("bar")`)
-		c.Assert(err, NotNil)
-		errs, ok := err.(validate.Errors)
-		c.Assert(ok, Equals, true)
-		c.Assert(errs, HasError, validate.ErrInvalid)
-	*/
+	err = validate.Valid(&s, "len(0)")
+	c.Assert(err, NotNil)
+	errs, ok := err.(validate.Errors)
+	c.Assert(ok, Equals, true)
+	c.Assert(errs, HasError, validate.ErrLen)
 }
 
 func (vs *ValidatorSuite) TestValidateWithCustomValidator(c *C) {
 
 	validator := validate.NewValidator()
-	validator.SetValidationFunc("equals", func(val interface{}, params []string) error {
+
+	err := validator.SetValidationFunc("equals", func(val interface{}, params []string) error {
 		v := val.(string)
 		if v != params[0] {
 			return validate.ErrInvalid
 		}
 		return nil
 	})
+	c.Assert(err, IsNil)
 
-	err := validator.Valid("bar", `equals("bar")`)
+	err = validator.Valid("bar", `equals("bar")`)
 	c.Assert(err, IsNil)
 
 	err = validator.Valid("foo", `equals("bar")`)
@@ -424,133 +415,62 @@ func (vs *ValidatorSuite) TestValidateWithCustomValidator(c *C) {
 	c.Assert(errs, HasError, validate.ErrInvalid)
 }
 
-/*
-func (vs *ValidatorSuite) TestValidatePointerVar(c *C) {
-	// just verifies that a the given val is a struct
-	validator.SetValidationFunc("struct", func(val interface{}, _ string) error {
-		v := reflect.ValueOf(val)
-		if v.Kind() == reflect.Struct {
-			return nil
-		}
-		return validate.ErrUnsupported
-	})
-	validator.SetValidationFunc("nil", func(val interface{}, _ string) error {
-		v := reflect.ValueOf(val)
-		if v.IsNil() {
-			return nil
-		}
-		return validate.ErrUnsupported
-	})
+func (vs *ValidatorSuite) TestValidateUnsetValidator(c *C) {
 
-	type test struct {
-		A int
-	}
-	err := validator.Valid(&test{}, "struct")
+	validator := validate.NewValidator()
+
+	err := validator.SetValidationFunc("required", nil)
 	c.Assert(err, IsNil)
 
-	type test2 struct {
-		B int
-	}
-	type test1 struct {
-		A *test2 `validate:"struct"`
-	}
-
-	err = validator.Validate(&test1{&test2{}})
-	c.Assert(err, IsNil)
-
-	type test4 struct {
-		B int `validate:"foo"`
-	}
-	type test3 struct {
-		A test4
-	}
-	err = validator.Validate(&test3{})
-	errs, ok := err.(validate.ErrorMap)
-	c.Assert(ok, Equals, true)
-	c.Assert(errs["A.B"], HasError, validate.ErrUnknownTag)
-
-	err = validator.Valid((*test)(nil), "nil")
-	c.Assert(err, IsNil)
-
-	type test5 struct {
-		A *test2 `validate:"nil"`
-	}
-	err = validator.Validate(&test5{})
-	c.Assert(err, IsNil)
-
-	type test6 struct {
-		A *test2 `validate:"required"`
-	}
-	err = validator.Validate(&test6{})
-	errs, ok = err.(validate.ErrorMap)
-	c.Assert(ok, Equals, true)
-	c.Assert(errs["A"], HasError, validate.ErrRequired)
-
-	err = validator.Validate(&test6{&test2{}})
-	c.Assert(err, IsNil)
+	err = validator.Valid("foo", `required`)
+	c.Assert(err, Equals, validate.ErrUnknownTag)
 }
 
-func (vs *ValidatorSuite) TestValidateOmittedStructVar(c *C) {
-	type test2 struct {
-		B int `validate:"min=1"`
-	}
-	type test1 struct {
-		A test2 `validate:"-"`
-	}
+func (vs *ValidatorSuite) TestValidateSetValidatorWithEmptyNameShouldError(c *C) {
+	validator := validate.NewValidator()
 
-	t := test1{}
-	err := validator.Validate(t)
-	c.Assert(err, IsNil)
+	err := validator.SetValidationFunc("", func(_ interface{}, _ []string) error {
+		return nil
+	})
 
-	errs := validator.Valid(test2{}, "-")
-	c.Assert(errs, IsNil)
-}
-
-func (vs *ValidatorSuite) TestUnknownTag(c *C) {
-	type test struct {
-		A int `validate:"foo"`
-	}
-	t := test{}
-	err := validator.Validate(t)
 	c.Assert(err, NotNil)
+	c.Assert(err, ErrorMatches, "name cannot be empty")
+}
+
+func (vs *ValidatorSuite) TestValidateWithTag(c *C) {
+	test := struct {
+		A string `testvalidate:"required" validate:"required,min(10)"`
+	}{}
+
+	validator := validate.WithTag(`testvalidate`)
+
+	err := validator.Validate(test)
+	c.Assert(err, NotNil)
+
 	errs, ok := err.(validate.ErrorMap)
 	c.Assert(ok, Equals, true)
 	c.Assert(errs, HasLen, 1)
-	c.Assert(errs["A"], HasError, validate.ErrUnknownTag)
+	c.Assert(errs["A"], HasLen, 1)
+	c.Assert(errs["A"], HasError, validate.ErrRequired)
 }
 
-func (vs *ValidatorSuite) TestUnsupported(c *C) {
-	type test struct {
-		A int     `validate:"regexp=a.*b"`
-		B float64 `validate:"regexp=.*"`
-	}
-	t := test{}
-	err := validator.Validate(t)
-	c.Assert(err, NotNil)
-	errs, ok := err.(validate.ErrorMap)
-	c.Assert(ok, Equals, true)
-	c.Assert(errs, HasLen, 2)
-	c.Assert(errs["A"], HasError, validate.ErrUnsupported)
-	c.Assert(errs["B"], HasError, validate.ErrUnsupported)
-}
+func (vs *ValidatorSuite) TestValidateSetTag(c *C) {
+	test := struct {
+		A string `testvalidate:"required" validate:"required,min(10)"`
+	}{}
 
-func (vs *ValidatorSuite) TestBadParameter(c *C) {
-	type test struct {
-		A string `validate:"min="`
-		B string `validate:"len=="`
-		C string `validate:"max=foo"`
-	}
-	t := test{}
-	err := validator.Validate(t)
+	validator := validate.NewValidator()
+	validator.SetTag(`testvalidate`)
+
+	err := validator.Validate(test)
 	c.Assert(err, NotNil)
+
 	errs, ok := err.(validate.ErrorMap)
 	c.Assert(ok, Equals, true)
-	c.Assert(errs, HasLen, 3)
-	c.Assert(errs["A"], HasError, validate.ErrBadParameter)
-	c.Assert(errs["B"], HasError, validate.ErrBadParameter)
-	c.Assert(errs["C"], HasError, validate.ErrBadParameter)
+	c.Assert(errs, HasLen, 1)
+	c.Assert(errs["A"], HasLen, 1)
+	c.Assert(errs["A"], HasError, validate.ErrRequired)
 }
-*/
 
 type hasErrorChecker struct {
 	*CheckerInfo
