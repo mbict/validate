@@ -21,9 +21,33 @@ var (
 	// param specified
 	ErrLen = errors.New("invalid length")
 
+	// ErrBetween is the error returned when variable is less than
+	// minimum or more than maximum specified
+	ErrBetween = errors.New("not between")
+
+	// ErrAround is the error returned when variable is more than
+	// minimum and less then maximum specified
+	ErrAround = errors.New("not around")
+
 	// ErrRegexp is the error returned when the value does not
 	// match the provided regular expression parameter
 	ErrRegexp = errors.New("regular expression mismatch")
+
+	// ErrAlphaDash is the error returned when the value does contains
+	// other characters than alpha's or dashes
+	ErrAlphaDash = errors.New("alpha dash mismatch")
+
+	// ErrAlphaDashDot is the error returned when the value does contains
+	// other characters than alpha's, dashes or dots
+	ErrAlphaDashDot = errors.New("alpha dash dot mismatch")
+
+	// ErrEmail is the error returned when the value does not match
+	// a valid email pattern
+	ErrEmail = errors.New("invalid email")
+
+	// ErrUrl is the error returned when the value does not match
+	// a valid url pattern
+	ErrUrl = errors.New("invalid url")
 
 	// ErrUnsupported is the error error returned when a validation rule
 	// is used with an unsupported variable type

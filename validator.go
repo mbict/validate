@@ -41,11 +41,19 @@ func NewValidator() Validator {
 	return &validator{
 		tagName: "validate",
 		validationFuncs: map[string]ValidationFunc{
-			"required": required,
-			"len":      length,
-			"min":      min,
-			"max":      max,
-			"regexp":   regex,
+			"required":       required,
+			"len":            length,
+			"min":            min,
+			"max":            max,
+			"between":        between,
+			"around":         around,
+			"include":        include,
+			"exclude":        exclude,
+			"regexp":         regex,
+			"url":            url,
+			"email":          email,
+			"alpha_dash":     alphaDash,
+			"alpha_dash_dot": alphaDashDot,
 		},
 	}
 }

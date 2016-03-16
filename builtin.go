@@ -217,10 +217,210 @@ func regex(v interface{}, params []string) error {
 }
 
 func between(v interface{}, params []string) error {
+	if len(params) != 2 {
+		return ErrInvalidParameterCount
+	}
+
+	st := reflect.ValueOf(v)
+	var invalid bool
+	switch st.Kind() {
+	case reflect.String:
+		a, err := asInt(params[0])
+		if err != nil {
+			return ErrBadParameter
+		}
+
+		b, err := asInt(params[1])
+		if err != nil {
+			return ErrBadParameter
+		}
+
+		len := int64(len(st.String()))
+		if a > b {
+			invalid = len < b || len > a
+		} else { //inverse
+			invalid = len < a || len > b
+		}
+	case reflect.Slice, reflect.Map, reflect.Array:
+		a, err := asInt(params[0])
+		if err != nil {
+			return ErrBadParameter
+		}
+
+		b, err := asInt(params[1])
+		if err != nil {
+			return ErrBadParameter
+		}
+
+		len := int64(st.Len())
+		if a > b {
+			invalid = len < b || len > a
+		} else { //inverse
+			invalid = len < a || len > b
+		}
+
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		a, err := asInt(params[0])
+		if err != nil {
+			return ErrBadParameter
+		}
+
+		b, err := asInt(params[1])
+		if err != nil {
+			return ErrBadParameter
+		}
+
+		val := st.Int()
+		if a > b {
+			invalid = val < b || val > a
+		} else { //inverse
+			invalid = val < a || val > b
+		}
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		a, err := asUint(params[0])
+		if err != nil {
+			return ErrBadParameter
+		}
+
+		b, err := asUint(params[1])
+		if err != nil {
+			return ErrBadParameter
+		}
+
+		val := st.Uint()
+		if a > b {
+			invalid = val < b || val > a
+		} else { //inverse
+			invalid = val < a || val > b
+		}
+	case reflect.Float32, reflect.Float64:
+		a, err := asFloat(params[0])
+		if err != nil {
+			return ErrBadParameter
+		}
+
+		b, err := asFloat(params[1])
+		if err != nil {
+			return ErrBadParameter
+		}
+
+		val := st.Float()
+		if a > b {
+			invalid = val < b || val > a
+		} else { //inverse
+			invalid = val < a || val > b
+		}
+
+	default:
+		return ErrUnsupported
+	}
+	if invalid {
+		return ErrBetween
+	}
 	return nil
 }
 
-func contain(v interface{}, params []string) error {
+func around(v interface{}, params []string) error {
+	if len(params) != 2 {
+		return ErrInvalidParameterCount
+	}
+
+	st := reflect.ValueOf(v)
+	var invalid bool
+	switch st.Kind() {
+	case reflect.String:
+		a, err := asInt(params[0])
+		if err != nil {
+			return ErrBadParameter
+		}
+
+		b, err := asInt(params[1])
+		if err != nil {
+			return ErrBadParameter
+		}
+
+		len := int64(len(st.String()))
+		if a < b {
+			invalid = len < b && len > a
+		} else { //inverse
+			invalid = len < a && len > b
+		}
+	case reflect.Slice, reflect.Map, reflect.Array:
+		a, err := asInt(params[0])
+		if err != nil {
+			return ErrBadParameter
+		}
+
+		b, err := asInt(params[1])
+		if err != nil {
+			return ErrBadParameter
+		}
+
+		len := int64(st.Len())
+		if a < b {
+			invalid = len < b && len > a
+		} else { //inverse
+			invalid = len < a && len > b
+		}
+
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		a, err := asInt(params[0])
+		if err != nil {
+			return ErrBadParameter
+		}
+
+		b, err := asInt(params[1])
+		if err != nil {
+			return ErrBadParameter
+		}
+
+		val := st.Int()
+		if a < b {
+			invalid = val < b && val > a
+		} else { //inverse
+			invalid = val < a && val > b
+		}
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		a, err := asUint(params[0])
+		if err != nil {
+			return ErrBadParameter
+		}
+
+		b, err := asUint(params[1])
+		if err != nil {
+			return ErrBadParameter
+		}
+
+		val := st.Uint()
+		if a < b {
+			invalid = val < b && val > a
+		} else { //inverse
+			invalid = val < a && val > b
+		}
+	case reflect.Float32, reflect.Float64:
+		a, err := asFloat(params[0])
+		if err != nil {
+			return ErrBadParameter
+		}
+
+		b, err := asFloat(params[1])
+		if err != nil {
+			return ErrBadParameter
+		}
+
+		val := st.Float()
+		if a < b {
+			invalid = val < b && val > a
+		} else { //inverse
+			invalid = val < a && val > b
+		}
+
+	default:
+		return ErrUnsupported
+	}
+	if invalid {
+		return ErrAround
+	}
 	return nil
 }
 
@@ -232,32 +432,59 @@ func exclude(v interface{}, params []string) error {
 	return nil
 }
 
-//utility functions
-
-var alphaDashPattern = regexp.MustCompile("[^\\d\\w-_]")
+var alphaDashRe = regexp.MustCompile("[^\\d\\w-_]")
 
 func alphaDash(v interface{}, params []string) error {
-	/*if alphaDashPattern.MatchString(fmt.Sprintf("%v", v.Interface())) {
-		errors.Add([]string{path}, AlphaDashError, "AlphaDash")
-	}*/
+	s, ok := v.(string)
+	if !ok {
+		return ErrUnsupported
+	}
+
+	if alphaDashRe.MatchString(s) {
+		return ErrAlphaDash
+	}
 	return nil
 }
 
-var alphaDashDotPattern = regexp.MustCompile("[^\\d\\w-_\\.]")
+var alphaDashDotRe = regexp.MustCompile("[^\\d\\w-_\\.]")
 
 func alphaDashDot(v interface{}, params []string) error {
+	s, ok := v.(string)
+	if !ok {
+		return ErrUnsupported
+	}
+
+	if alphaDashDotRe.MatchString(s) {
+		return ErrAlphaDashDot
+	}
 	return nil
 }
 
-var emailPattern = regexp.MustCompile("[\\w!#$%&'*+/=?^_`{|}~-]+(?:\\.[\\w!#$%&'*+/=?^_`{|}~-]+)*@(?:[\\w](?:[\\w-]*[\\w])?\\.)+[a-zA-Z0-9](?:[\\w-]*[\\w])?")
+var emailRe = regexp.MustCompile("[\\w!#$%&'*+/=?^_`{|}~-]+(?:\\.[\\w!#$%&'*+/=?^_`{|}~-]+)*@(?:[\\w](?:[\\w-]*[\\w])?\\.)+[a-zA-Z0-9](?:[\\w-]*[\\w])?")
 
 func email(v interface{}, params []string) error {
+	s, ok := v.(string)
+	if !ok {
+		return ErrUnsupported
+	}
+
+	if !emailRe.MatchString(s) {
+		return ErrEmail
+	}
 	return nil
 }
 
-var urlPattern = regexp.MustCompile(`(http|https):\/\/[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?`)
+var urlRe = regexp.MustCompile(`(http|https):\/\/[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?`)
 
 func url(v interface{}, params []string) error {
+	s, ok := v.(string)
+	if !ok {
+		return ErrUnsupported
+	}
+
+	if !urlRe.MatchString(s) {
+		return ErrUrl
+	}
 	return nil
 }
 
