@@ -8,6 +8,7 @@ import (
 	"unicode"
 )
 
+// Validator interface
 type Validator interface {
 	SetTag(tag string)
 	WithTag(tag string) Validator
@@ -26,7 +27,7 @@ type tag struct {
 // field and the parameters used for the respective validation tag.
 type ValidationFunc func(v interface{}, params []string) error
 
-// Validator implements a validator
+// validator implements the Validator interface
 type validator struct {
 	tagName         string                    // structure tag name being used (`validate`)
 	validationFuncs map[string]ValidationFunc // validator functions map indexed by name
@@ -58,34 +59,32 @@ func NewValidator() Validator {
 	}
 }
 
-// SetTag allows you to change the tag name used in structs
+// SetTag allows you to change the tag name used in structs for the default validator
 func SetTag(tag string) {
 	defaultValidator.SetTag(tag)
 }
 
-// WithTag creates a new Validator with the new tag name. It is
-// useful to chain-call with Validate so we don't change the tag
-// name permanently: validate.WithTag("foo").Validate(t)
+// WithTag creates a new Validator with the new tag name. It will leave
+// the defaultValidator untouched
 func WithTag(tag string) Validator {
 	return defaultValidator.WithTag(tag)
 }
 
-// SetValidationFunc sets the function to be used for a given
-// validation constraint. Calling this function with nil vf
-// is the same as removing the constraint function from the list.
+// SetValidationFunc sets the function to be used for a given validation constraint.
+// Calling this function with nil validatorFunction (vf) is the same as removing
+// the constraint function from the list. The function will be added to the default
+// validator
 func SetValidationFunc(name string, vf ValidationFunc) error {
 	return defaultValidator.SetValidationFunc(name, vf)
 }
 
-// Validate validates the fields of a struct based
-// on 'validator' tags and returns errors found indexed
-// by the field name.
+// Validate validates the fields of a struct based  on 'validator' tags and returns
+// errors found indexed by the field name.
 func Validate(v interface{}) error {
 	return defaultValidator.Validate(v)
 }
 
-// Valid validates a value based on the provided
-// tags and returns errors found or nil.
+// Valid validates a value based on the provided tags and returns errors found or nil.
 func Valid(val interface{}, tags string) error {
 	return defaultValidator.Valid(val, tags)
 }
@@ -95,16 +94,14 @@ func (mv *validator) SetTag(tag string) {
 	mv.tagName = tag
 }
 
-// WithTag creates a new Validator based on the current validator with
-// the new tag name.
+// WithTag creates a new Validator based on the current validator with the new tag name.
 func (mv *validator) WithTag(tag string) Validator {
 	v := mv.copy()
 	v.SetTag(tag)
 	return v
 }
 
-// Copy creates a duplicate of the current validator and returns
-// the new instance
+// copy creates a duplicate of the current validator and returns the new instance
 func (mv *validator) copy() Validator {
 	return &validator{
 		tagName:         mv.tagName,
@@ -112,9 +109,9 @@ func (mv *validator) copy() Validator {
 	}
 }
 
-// SetValidationFunc sets the function to be used for a given
-// validation constraint. Calling this function with nil vf
-// is the same as removing the constraint function from the list.
+// SetValidationFunc sets the function to be used for a given validation constraint.
+// Calling this function with nil validatorFunction (vf) is the same as removing
+// the constraint function from the list.
 func (mv *validator) SetValidationFunc(name string, vf ValidationFunc) error {
 	if name == "" {
 		return errors.New("name cannot be empty")
@@ -127,9 +124,9 @@ func (mv *validator) SetValidationFunc(name string, vf ValidationFunc) error {
 	return nil
 }
 
-// Validate validates the fields of a struct based
-// on 'validator' tags and returns errors found indexed
-// by the field name.
+// Validate validates the fields of a struct based on 'validator' tags and returns
+// errors found indexed by the field name.
+// The returned error is of the type ErrorMap.
 func (mv *validator) Validate(v interface{}) error {
 	sv := reflect.ValueOf(v)
 	st := reflect.TypeOf(v)
@@ -211,8 +208,7 @@ func (mv *validator) Validate(v interface{}) error {
 	return nil
 }
 
-// Valid validates a value based on the provided
-// tags and returns errors found or nil.
+// Valid validates a value based on the provided tags and returns errors found or nil.
 func (mv *validator) Valid(val interface{}, tags string) error {
 	if tags == "-" {
 		return nil
