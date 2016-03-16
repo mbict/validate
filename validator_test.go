@@ -1,7 +1,7 @@
 package validate_test
 
 import (
-	"github.com/mbict/go-validate"
+	validate "github.com/mbict/go-validate"
 	. "gopkg.in/check.v1"
 	"testing"
 )

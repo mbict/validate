@@ -1,3 +1,4 @@
+[![wercker status](https://app.wercker.com/status/3a36cd7798b739f402718a0ba24334c4/s "wercker status")](https://app.wercker.com/project/bykey/3a36cd7798b739f402718a0ba24334c4)
 [![Build Status](https://travis-ci.org/mbict/go-validate.png?branch=master)](https://travis-ci.org/mbict/go-validate)
 [![GoDoc](https://godoc.org/github.com/mbict/go-validate?status.png)](http://godoc.org/github.com/mbict/go-validate)
 [![GoCover](http://gocover.io/_badge/github.com/mbict/go-validate)](http://gocover.io/github.com/mbict/go-validate)

@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	// ErrRequiredValue is the error returned when variable has a empty value
+	// ErrRequired is the error returned when variable has a empty value
 	ErrRequired = errors.New("required")
 
 	// ErrMin is the error returned when variable is less than mininum
@@ -45,9 +45,9 @@ var (
 	// a valid email pattern
 	ErrEmail = errors.New("invalid email")
 
-	// ErrUrl is the error returned when the value does not match
+	// ErrURL is the error returned when the value does not match
 	// a valid url pattern
-	ErrUrl = errors.New("invalid url")
+	ErrURL = errors.New("invalid url")
 
 	// ErrUnsupported is the error error returned when a validation rule
 	// is used with an unsupported variable type

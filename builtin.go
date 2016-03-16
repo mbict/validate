@@ -483,12 +483,12 @@ func url(v interface{}, params []string) error {
 	}
 
 	if !urlRe.MatchString(s) {
-		return ErrUrl
+		return ErrURL
 	}
 	return nil
 }
 
-// asInt retuns the parameter as a int64
+// asInt returns the parameter as a int64
 // or panics if it can't convert
 func asInt(param string) (int64, error) {
 	i, err := strconv.ParseInt(param, 0, 64)
@@ -498,7 +498,7 @@ func asInt(param string) (int64, error) {
 	return i, nil
 }
 
-// asUint retuns the parameter as a uint64
+// asUint returns the parameter as a uint64
 // or panics if it can't convert
 func asUint(param string) (uint64, error) {
 	i, err := strconv.ParseUint(param, 0, 64)
@@ -508,7 +508,7 @@ func asUint(param string) (uint64, error) {
 	return i, nil
 }
 
-// asFloat retuns the parameter as a float64
+// asFloat returns the parameter as a float64
 // or panics if it can't convert
 func asFloat(param string) (float64, error) {
 	i, err := strconv.ParseFloat(param, 64)
