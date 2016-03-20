@@ -309,7 +309,7 @@ func (vs *ValidatorSuite) TestStructValidateInterface(c *C) {
 
 	c.Assert(errs, HasLen, 4)
 	c.Assert(errs["A"], HasLen, 3)
-	c.Assert(errs["A"], HasError, validate.ErrRequired)
+	c.Assert(errs["A"], HasError, validate.ErrMin)
 	c.Assert(errs["A"], HasError, customErr1)
 	c.Assert(errs["A"], HasError, customErr2)
 	c.Assert(errs["B"], HasLen, 1)
@@ -323,7 +323,7 @@ func (vs *ValidatorSuite) TestStructValidateInterface(c *C) {
 
 	c.Assert(errs, HasLen, 4)
 	c.Assert(errs["A"], HasLen, 3)
-	c.Assert(errs["A"], HasError, validate.ErrRequired)
+	c.Assert(errs["A"], HasError, validate.ErrMin)
 	c.Assert(errs["A"], HasError, customErr1)
 	c.Assert(errs["A"], HasError, customErr2)
 	c.Assert(errs["B"], HasLen, 1)
