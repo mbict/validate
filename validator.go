@@ -23,6 +23,11 @@ type tag struct {
 	Fn         ValidationFunc // validation function to call
 }
 
+// ValidateInterface describes the interface a structure can embed to enable custom validation of the structure
+type ValidateInterface interface {
+	Validate() ErrorMap
+}
+
 // ValidationFunc is a function that receives the value of a
 // field and the parameters used for the respective validation tag.
 type ValidationFunc func(v interface{}, params []string) error
@@ -199,6 +204,17 @@ func (mv *validator) Validate(v interface{}) error {
 
 		if len(errs) > 0 {
 			m[st.Field(i).Name] = errs
+		}
+	}
+
+	//structure custom validator function
+	i := sv.Interface()
+	if validateFunc, ok := i.(ValidateInterface); ok {
+		em := validateFunc.Validate()
+		if em != nil && len(em) > 0 {
+			for f, e := range em {
+				m[f] = append(m[f], e...)
+			}
 		}
 	}
 

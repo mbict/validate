@@ -1,6 +1,7 @@
 package validate_test
 
 import (
+	"errors"
 	validate "github.com/mbict/go-validate"
 	. "gopkg.in/check.v1"
 	"testing"
@@ -276,6 +277,63 @@ func (vs *ValidatorSuite) TestValidateIgnoreTag(c *C) {
 	c.Assert(err, IsNil)
 }
 
+type testStructValidateFuncInterface struct {
+	A            int `validate:"min(2)"`
+	B            int `validate:"min(2)"`
+	C            int `validate:"min(10)"`
+	validateFunc func() validate.ErrorMap
+}
+
+func (s testStructValidateFuncInterface) Validate() validate.ErrorMap {
+	return s.validateFunc()
+}
+
+func (vs *ValidatorSuite) TestStructValidateInterface(c *C) {
+	customErr1 := errors.New("custom 1")
+	customErr2 := errors.New("cutsom 2")
+
+	test := testStructValidateFuncInterface{
+		A: 1,
+		B: 2,
+		C: 3,
+		validateFunc: func() validate.ErrorMap {
+			return validate.ErrorMap{
+				"A": validate.Errors{customErr1, customErr2},
+				"B": validate.Errors{customErr1},
+				"D": validate.Errors{customErr2},
+			}
+		},
+	}
+
+	errs := validate.Validate(test).(validate.ErrorMap)
+
+	c.Assert(errs, HasLen, 4)
+	c.Assert(errs["A"], HasLen, 3)
+	c.Assert(errs["A"], HasError, validate.ErrRequired)
+	c.Assert(errs["A"], HasError, customErr1)
+	c.Assert(errs["A"], HasError, customErr2)
+	c.Assert(errs["B"], HasLen, 1)
+	c.Assert(errs["B"], HasError, customErr1)
+	c.Assert(errs["C"], HasLen, 1)
+	c.Assert(errs["C"], HasError, validate.ErrMin)
+	c.Assert(errs["D"], HasLen, 1)
+	c.Assert(errs["D"], HasError, customErr2)
+
+	errs = validate.Validate(&test).(validate.ErrorMap)
+
+	c.Assert(errs, HasLen, 4)
+	c.Assert(errs["A"], HasLen, 3)
+	c.Assert(errs["A"], HasError, validate.ErrRequired)
+	c.Assert(errs["A"], HasError, customErr1)
+	c.Assert(errs["A"], HasError, customErr2)
+	c.Assert(errs["B"], HasLen, 1)
+	c.Assert(errs["B"], HasError, customErr1)
+	c.Assert(errs["C"], HasLen, 1)
+	c.Assert(errs["C"], HasError, validate.ErrMin)
+	c.Assert(errs["D"], HasLen, 1)
+	c.Assert(errs["D"], HasError, customErr2)
+}
+
 func (vs *ValidatorSuite) TestValidMap(c *C) {
 	m := make(map[string]string)
 
@@ -469,6 +527,14 @@ func (vs *ValidatorSuite) TestValidateSetTag(c *C) {
 	c.Assert(errs, HasLen, 1)
 	c.Assert(errs["A"], HasLen, 1)
 	c.Assert(errs["A"], HasError, validate.ErrRequired)
+}
+
+type testSimpleValidateEmbed struct {
+	A int `validate:"min(10)"`
+}
+
+func (t *testSimpleValidateEmbed) Validate() validate.ErrorMap {
+	return nil
 }
 
 type hasErrorChecker struct {

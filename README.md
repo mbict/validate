@@ -43,7 +43,6 @@ A simple example would.
 		errsMap["Page"].Error()
 	}
 
-
 Builtin validators
 ==================
 
@@ -168,6 +167,27 @@ SetTag is probably better used with multiple validators.
 	barValidator.Validate(t)
 
 This keeps the default validator's tag clean.
+
+
+Structure custom validation
+===========================
+Your structure maybe needs a custom validation that cannot be solved with the builtin or custom validator.
+Therefor if the structure implements the ValidateInterface the method validate is called if all validations are done
+
+```go
+var CustomErr := errors.New("custom error")
+
+type YourStruct struct {
+	...
+}
+
+func (o YourStruct) Validate() validate.ErrorMap {
+	// in here you can do some custom validation
+	// when you got a validation error, init and add a entry to the error map.
+	return validate.ErrorMap{"A": validate.Errors{CustomErr,}}
+}
+
+```
 
 Dependencies
 ============
