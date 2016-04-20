@@ -53,7 +53,7 @@ func NewValidator() Validator {
 			"max":            max,
 			"between":        between,
 			"around":         around,
-			"include":        include,
+			"in":             include,
 			"exclude":        exclude,
 			"regexp":         regex,
 			"url":            url,

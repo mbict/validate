@@ -49,6 +49,14 @@ var (
 	// a valid url pattern
 	ErrURL = errors.New("invalid url")
 
+	// ErrInclude is the error returned when the value is not found
+	// in the set values that in the include list
+	ErrInclude = errors.New("value not found in set")
+
+	// ErrExclude is the error returned when the value is  found
+	// in the set values to exclude
+	ErrExclude = errors.New("value matches one exluded value")
+
 	// ErrUnsupported is the error error returned when a validation rule
 	// is used with an unsupported variable type
 	ErrUnsupported = errors.New("unsupported type")

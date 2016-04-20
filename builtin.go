@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 // nonzero tests whether a variable value non-zero
@@ -424,11 +425,45 @@ func around(v interface{}, params []string) error {
 	return nil
 }
 
-func include(v interface{}, params []string) error {
-	return nil
+func include(i interface{}, params []string) error {
+	if len(params) < 1 {
+		return ErrInvalidParameterCount
+	}
+
+	switch v := i.(type) {
+	case string:
+		for _, in := range params {
+			if strings.Compare(v, in) == 0 {
+				//we found a match
+				return nil
+			}
+		}
+	default:
+		return ErrUnsupported
+	}
+
+	//if no match is found we error out
+	return ErrInclude
 }
 
-func exclude(v interface{}, params []string) error {
+func exclude(i interface{}, params []string) error {
+	if len(params) < 1 {
+		return ErrInvalidParameterCount
+	}
+
+	switch v := i.(type) {
+	case string:
+		for _, in := range params {
+			if strings.Compare(v, in) == 0 {
+				//found a match, we error out
+				return ErrExclude
+			}
+		}
+	default:
+		return ErrUnsupported
+	}
+
+	//if no match is found all is ok
 	return nil
 }
 
