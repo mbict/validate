@@ -1,6 +1,7 @@
 package validate
 
 import (
+	"fmt"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -430,16 +431,12 @@ func include(i interface{}, params []string) error {
 		return ErrInvalidParameterCount
 	}
 
-	switch v := i.(type) {
-	case string:
-		for _, in := range params {
-			if strings.Compare(v, in) == 0 {
-				//we found a match
-				return nil
-			}
+	str := fmt.Sprintf("%v", i)
+	for _, in := range params {
+		if strings.Compare(str, in) == 0 {
+			//we found a match
+			return nil
 		}
-	default:
-		return ErrUnsupported
 	}
 
 	//if no match is found we error out
@@ -451,16 +448,12 @@ func exclude(i interface{}, params []string) error {
 		return ErrInvalidParameterCount
 	}
 
-	switch v := i.(type) {
-	case string:
-		for _, in := range params {
-			if strings.Compare(v, in) == 0 {
-				//found a match, we error out
-				return ErrExclude
-			}
+	str := fmt.Sprintf("%v", i)
+	for _, in := range params {
+		if strings.Compare(str, in) == 0 {
+			//found a match, we error out
+			return ErrExclude
 		}
-	default:
-		return ErrUnsupported
 	}
 
 	//if no match is found all is ok

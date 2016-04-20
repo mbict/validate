@@ -651,8 +651,6 @@ func (s *BuiltinSuite) TestInclude(c *C) {
 
 	c.Check(validate.Valid(string("foo"), "in(foo,bar)"), IsNil)
 	c.Check(validate.Valid(string("bar"), "in(foo,bar)"), IsNil)
-
-	c.Check(validate.Valid(bool(true), "in(foo,bar)"), ErrorMatches, "unsupported type")
 }
 
 func (s *BuiltinSuite) TestExclude(c *C) {
@@ -661,6 +659,4 @@ func (s *BuiltinSuite) TestExclude(c *C) {
 
 	c.Check(validate.Valid(string(""), "exclude(foo,bar)"), IsNil)
 	c.Check(validate.Valid(string("baz"), "exclude(foo,bar)"), IsNil)
-
-	c.Check(validate.Valid(bool(true), "exclude(foo,bar)"), ErrorMatches, "unsupported type")
 }
