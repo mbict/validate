@@ -2,7 +2,7 @@ package validate
 
 import (
 	"fmt"
-	errors "github.com/mbict/go-errors"
+	"github.com/mbict/go-errors"
 	"github.com/mbict/go-tags"
 	"reflect"
 	"unicode"
@@ -58,8 +58,17 @@ func NewValidator() Validator {
 			"regexp":         regex,
 			"url":            url,
 			"email":          email,
+			"numeric":        numeric,
+			"number":         number,
 			"alpha_dash":     alphaDash,
 			"alpha_dash_dot": alphaDashDot,
+			"alpha":          alpha,
+			"alphanumeric":   alphaNumeric,
+			"uuid":           uuid,
+			"uuid3":          uuid3,
+			"uuid4":          uuid4,
+			"uuid5":          uuid5,
+			"base64":         base64,
 		},
 	}
 }

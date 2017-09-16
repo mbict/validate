@@ -32,8 +32,16 @@ var (
 	// match the provided regular expression parameter
 	ErrRegexp = errors.New("regular expression mismatch")
 
+	// ErrAlpha is the error returned when the value does contains
+	// other characters than alphas
+	ErrAlpha = errors.New("alpha dash mismatch")
+
+	// ErrAlphaNumeric is the error returned when the value does contains
+	// other characters than alphas or numerics
+	ErrAlphaNumeric = errors.New("alpha dash mismatch")
+
 	// ErrAlphaDash is the error returned when the value does contains
-	// other characters than alpha's or dashes
+	// other characters than alphas or dashes
 	ErrAlphaDash = errors.New("alpha dash mismatch")
 
 	// ErrAlphaDashDot is the error returned when the value does contains
@@ -79,4 +87,25 @@ var (
 	// ErrInvalid is the error returned when variable is invalid
 	// (normally a nil pointer)
 	ErrInvalid = errors.New("invalid value")
+
+	// ErrNumber is the error returned when value is not a number
+	ErrNumber = errors.New("value not a number")
+
+	// ErrNumeric is the error returned when value is not in numeric format
+	ErrNumeric = errors.New("value not numeric")
+
+	// ErrUUID is the error returned when value is not in UUID format
+	ErrUUID = errors.New("invalid UUID")
+
+	// ErrUUID3 is the error returned when value is not in UUID format
+	ErrUUID3 = errors.New("invalid UUID3")
+
+	// ErrUUID4 is the error returned when value is not in UUID format
+	ErrUUID4 = errors.New("invalid UUID4")
+
+	// ErrUUID5 is the error returned when value is not in UUID format
+	ErrUUID5 = errors.New("invalid UUID5")
+
+	// ErrBase64 is the error returned when value is not a valid base64 encoded
+	ErrBase64 = errors.New("invalid base64 encoded")
 )

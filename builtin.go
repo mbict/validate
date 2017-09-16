@@ -460,7 +460,53 @@ func exclude(i interface{}, params []string) error {
 	return nil
 }
 
-var alphaDashRe = regexp.MustCompile("[^\\d\\w-_]")
+func number(v interface{}, params []string) error {
+	s, ok := v.(string)
+	if !ok {
+		return ErrUnsupported
+	}
+
+	if numberRegex.MatchString(s) {
+		return ErrNumber
+	}
+	return nil
+}
+
+func numeric(v interface{}, params []string) error {
+	s, ok := v.(string)
+	if !ok {
+		return ErrUnsupported
+	}
+
+	if numericRegex.MatchString(s) {
+		return ErrNumeric
+	}
+	return nil
+}
+
+func alpha(v interface{}, params []string) error {
+	s, ok := v.(string)
+	if !ok {
+		return ErrUnsupported
+	}
+
+	if alphaRegex.MatchString(s) {
+		return ErrAlpha
+	}
+	return nil
+}
+
+func alphaNumeric(v interface{}, params []string) error {
+	s, ok := v.(string)
+	if !ok {
+		return ErrUnsupported
+	}
+
+	if alphaNumericRegex.MatchString(s) {
+		return ErrAlphaNumeric
+	}
+	return nil
+}
 
 func alphaDash(v interface{}, params []string) error {
 	s, ok := v.(string)
@@ -468,13 +514,11 @@ func alphaDash(v interface{}, params []string) error {
 		return ErrUnsupported
 	}
 
-	if alphaDashRe.MatchString(s) {
+	if alphaDashRegex.MatchString(s) {
 		return ErrAlphaDash
 	}
 	return nil
 }
-
-var alphaDashDotRe = regexp.MustCompile("[^\\d\\w-_\\.]")
 
 func alphaDashDot(v interface{}, params []string) error {
 	s, ok := v.(string)
@@ -482,13 +526,11 @@ func alphaDashDot(v interface{}, params []string) error {
 		return ErrUnsupported
 	}
 
-	if alphaDashDotRe.MatchString(s) {
+	if alphaDashDotRegex.MatchString(s) {
 		return ErrAlphaDashDot
 	}
 	return nil
 }
-
-var emailRe = regexp.MustCompile("[\\w!#$%&'*+/=?^_`{|}~-]+(?:\\.[\\w!#$%&'*+/=?^_`{|}~-]+)*@(?:[\\w](?:[\\w-]*[\\w])?\\.)+[a-zA-Z0-9](?:[\\w-]*[\\w])?")
 
 func email(v interface{}, params []string) error {
 	s, ok := v.(string)
@@ -496,13 +538,11 @@ func email(v interface{}, params []string) error {
 		return ErrUnsupported
 	}
 
-	if !emailRe.MatchString(s) {
+	if !emailRegex.MatchString(s) {
 		return ErrEmail
 	}
 	return nil
 }
-
-var urlRe = regexp.MustCompile(`(http|https):\/\/[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?`)
 
 func url(v interface{}, params []string) error {
 	s, ok := v.(string)
@@ -510,8 +550,68 @@ func url(v interface{}, params []string) error {
 		return ErrUnsupported
 	}
 
-	if !urlRe.MatchString(s) {
+	if !urlRegex.MatchString(s) {
 		return ErrURL
+	}
+	return nil
+}
+
+func uuid(v interface{}, params []string) error {
+	s, ok := v.(string)
+	if !ok {
+		return ErrUnsupported
+	}
+
+	if !uUIDRegex.MatchString(s) {
+		return ErrUUID
+	}
+	return nil
+}
+
+func uuid3(v interface{}, params []string) error {
+	s, ok := v.(string)
+	if !ok {
+		return ErrUnsupported
+	}
+
+	if !uUID3Regex.MatchString(s) {
+		return ErrUUID3
+	}
+	return nil
+}
+
+func uuid4(v interface{}, params []string) error {
+	s, ok := v.(string)
+	if !ok {
+		return ErrUnsupported
+	}
+
+	if !uUID4Regex.MatchString(s) {
+		return ErrUUID4
+	}
+	return nil
+}
+
+func uuid5(v interface{}, params []string) error {
+	s, ok := v.(string)
+	if !ok {
+		return ErrUnsupported
+	}
+
+	if !uUID5Regex.MatchString(s) {
+		return ErrUUID5
+	}
+	return nil
+}
+
+func base64(v interface{}, params []string) error {
+	s, ok := v.(string)
+	if !ok {
+		return ErrUnsupported
+	}
+
+	if base64Regex.MatchString(s) {
+		return ErrBase64
 	}
 	return nil
 }

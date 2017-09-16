@@ -101,13 +101,40 @@ There are a few common set of builin validators included in the package.
         
     exclude
         tbd
+
+    number
+        tbd
         
+    numeric
+        tbd
+        
+    alpha
+        tbd
+        
+    alphanumeric
+        tbd
+
     alpha_dash
         tbd
         
     alpha_dash_dot
         tbd
-
+        
+    uuid
+        tbd
+        
+    uuid3
+        tbd
+        
+    uuid4
+        tbd
+        
+    uuid5
+        tbd
+        
+    base64
+        tbd
+        
 Custom validators
 
 It is possible to define your own custom validators by using SetValidationFunc.
