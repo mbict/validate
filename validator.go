@@ -1,8 +1,8 @@
 package validate
 
 import (
-	"errors"
 	"fmt"
+	errors "github.com/mbict/go-errors"
 	"github.com/mbict/go-tags"
 	"reflect"
 	"unicode"
@@ -25,7 +25,7 @@ type tag struct {
 
 // ValidateInterface describes the interface a structure can embed to enable custom validation of the structure
 type ValidateInterface interface {
-	Validate() ErrorMap
+	Validate() errors.ErrorHash
 }
 
 // ValidationFunc is a function that receives the value of a
@@ -131,7 +131,7 @@ func (mv *validator) SetValidationFunc(name string, vf ValidationFunc) error {
 
 // Validate validates the fields of a struct based on 'validator' tags and returns
 // errors found indexed by the field name.
-// The returned error is of the type ErrorMap.
+// The returned error is of the type errors.ErrorHash.
 func (mv *validator) Validate(v interface{}) error {
 	sv := reflect.ValueOf(v)
 	st := reflect.TypeOf(v)
@@ -144,7 +144,7 @@ func (mv *validator) Validate(v interface{}) error {
 	}
 
 	nfields := sv.NumField()
-	m := make(ErrorMap)
+	m := make(errors.ErrorHash)
 	for i := 0; i < nfields; i++ {
 		f := sv.Field(i)
 
@@ -163,14 +163,14 @@ func (mv *validator) Validate(v interface{}) error {
 			continue
 		}
 
-		var errs Errors
+		var errs errors.Errors
 		if tag != "" {
 			err := mv.Valid(f.Interface(), tag)
-			if errors, ok := err.(Errors); ok {
-				errs = errors
+			if e, ok := err.(errors.Errors); ok {
+				errs = e
 			} else {
 				if err != nil {
-					errs = Errors{err}
+					errs = errors.Errors{err}
 				}
 			}
 		}
@@ -184,7 +184,7 @@ func (mv *validator) Validate(v interface{}) error {
 			if t.Kind() == reflect.Struct {
 				for i := 0; i < f.Len(); i++ {
 					e := mv.Validate(f.Index(i).Interface())
-					if e, ok := e.(ErrorMap); ok && len(e) > 0 {
+					if e, ok := e.(errors.ErrorHash); ok && len(e) > 0 {
 						for j, k := range e {
 							field := fmt.Sprintf("%s.%d.%s", fname, i, j)
 							m[field] = k
@@ -195,7 +195,7 @@ func (mv *validator) Validate(v interface{}) error {
 		} else if f.Kind() == reflect.Struct {
 
 			e := mv.Validate(f.Interface())
-			if e, ok := e.(ErrorMap); ok && len(e) > 0 {
+			if e, ok := e.(errors.ErrorHash); ok && len(e) > 0 {
 				for j, k := range e {
 					m[fname+"."+j] = k
 				}
@@ -251,7 +251,7 @@ func (mv *validator) validateVar(v interface{}, tag string) error {
 		// unknown tag found.
 		return err
 	}
-	errs := make(Errors, 0, len(tags))
+	errs := make(errors.Errors, 0, len(tags))
 	for _, t := range tags {
 		if err := t.Fn(v, t.Args); err != nil {
 			errs = append(errs, err)

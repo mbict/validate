@@ -1,8 +1,7 @@
 package validate
 
 import (
-	"errors"
-	"fmt"
+	"github.com/mbict/go-errors"
 )
 
 var (
@@ -81,62 +80,3 @@ var (
 	// (normally a nil pointer)
 	ErrInvalid = errors.New("invalid value")
 )
-
-// Errors is a slice of errors returned by the Validate function.
-type Errors []error
-
-// Errors implements the Error interface and returns all the errors
-// as a comma delimited string
-func (errs Errors) Error() string {
-	if len(errs) > 0 {
-		result := errs[0].Error()
-		for _, err := range errs[1:] {
-			result = result + ", " + err.Error()
-		}
-		return result
-	}
-	return ""
-}
-
-// ErrorMap is a map which contains all errors from validating a struct.
-type ErrorMap map[string]Errors
-
-// ErrorMap implements the Error interface and returns all the fields
-// who has errors in a cimma delimited string
-func (err ErrorMap) Error() string {
-	result := ""
-	for k, errs := range err {
-		if len(errs) > 0 {
-			if len(result) > 0 {
-				result = fmt.Sprintf("%s, %s:[%s]", result, k, errs.Error())
-			} else {
-				result = fmt.Sprintf("%s:[%s]", k, errs.Error())
-			}
-		}
-	}
-	return result
-}
-
-// HasErrors is a helper function to check if there is a error in the ErrorMap for the
-// corresponding field name. Handy for use with the template funcion map
-func HasErrors(errors ErrorMap, field string) bool {
-	errs, ok := errors[field]
-	return ok && len(errs) > 0
-}
-
-// HasError is a helper function to check if there is a specific error in the ErrorMap
-// for the corresponding field name that matches the erro string.
-// Handy for use with the template funcion map
-func HasError(errors ErrorMap, field string, error string) bool {
-	errs, ok := errors[field]
-	if !ok {
-		return false
-	}
-
-	for _, err := range errs {
-		if err.Error() == error {
-			return true
-		}
-	}
-	return false
-}

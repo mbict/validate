@@ -1,7 +1,7 @@
 package validate_test
 
 import (
-	"errors"
+	errors "github.com/mbict/go-errors"
 	validate "github.com/mbict/go-validate"
 	. "gopkg.in/check.v1"
 	"testing"
@@ -54,7 +54,7 @@ func (vs *ValidatorSuite) TestValidate(c *C) {
 	err := validate.Validate(test[0])
 	c.Assert(err, NotNil)
 
-	errs, ok := err.(validate.ErrorMap)
+	errs, ok := err.(errors.ErrorHash)
 	c.Assert(ok, Equals, true)
 	c.Assert(errs["A"], HasLen, 2)
 	c.Assert(errs["A"], HasError, validate.ErrRequired)
@@ -74,7 +74,7 @@ func (vs *ValidatorSuite) TestValidate(c *C) {
 	err = validate.Validate(test[1])
 	c.Assert(err, NotNil)
 
-	errs, ok = err.(validate.ErrorMap)
+	errs, ok = err.(errors.ErrorHash)
 	c.Assert(ok, Equals, true)
 	c.Assert(errs["A"], HasLen, 1)
 	c.Assert(errs["A"], HasError, validate.ErrMax)
@@ -111,7 +111,7 @@ func (vs *ValidatorSuite) TestValidateEmbedStruct(c *C) {
 	err := validate.Validate(test[0])
 	c.Assert(err, NotNil)
 
-	errs, ok := err.(validate.ErrorMap)
+	errs, ok := err.(errors.ErrorHash)
 	c.Assert(ok, Equals, true)
 	c.Assert(errs["A.A"], HasLen, 1)
 	c.Assert(errs["A.A"], HasError, validate.ErrMin)
@@ -123,7 +123,7 @@ func (vs *ValidatorSuite) TestValidateEmbedStruct(c *C) {
 	err = validate.Validate(test[1])
 	c.Assert(err, NotNil)
 
-	errs, ok = err.(validate.ErrorMap)
+	errs, ok = err.(errors.ErrorHash)
 	c.Assert(ok, Equals, true)
 	c.Assert(errs["B"], HasLen, 0)
 	c.Assert(errs["B.A"], HasLen, 1)
@@ -133,7 +133,7 @@ func (vs *ValidatorSuite) TestValidateEmbedStruct(c *C) {
 	err = validate.Validate(test[1])
 	c.Assert(err, NotNil)
 
-	errs, ok = err.(validate.ErrorMap)
+	errs, ok = err.(errors.ErrorHash)
 	c.Assert(ok, Equals, true)
 	c.Assert(errs["B"], HasLen, 0)
 	c.Assert(errs["B.A"], HasLen, 1)
@@ -168,7 +168,7 @@ func (vs *ValidatorSuite) TestValidateSlice(c *C) {
 	err := validate.Validate(test[0])
 	c.Assert(err, NotNil)
 
-	errs, ok := err.(validate.ErrorMap)
+	errs, ok := err.(errors.ErrorHash)
 	c.Assert(ok, Equals, true)
 	c.Assert(errs["A"], HasLen, 2)
 	c.Assert(errs["A"], HasError, validate.ErrMin)
@@ -180,7 +180,7 @@ func (vs *ValidatorSuite) TestValidateSlice(c *C) {
 	err = validate.Validate(test[1])
 	c.Assert(err, NotNil)
 
-	errs, ok = err.(validate.ErrorMap)
+	errs, ok = err.(errors.ErrorHash)
 	c.Assert(ok, Equals, true)
 	c.Assert(errs["A"], HasLen, 2)
 	c.Assert(errs["A"], HasError, validate.ErrMin)
@@ -192,7 +192,7 @@ func (vs *ValidatorSuite) TestValidateSlice(c *C) {
 	err = validate.Validate(test[2])
 	c.Assert(err, NotNil)
 
-	errs, ok = err.(validate.ErrorMap)
+	errs, ok = err.(errors.ErrorHash)
 	c.Assert(ok, Equals, true)
 	c.Assert(errs["A"], HasLen, 1)
 	c.Assert(errs["A"], HasError, validate.ErrMin)
@@ -226,7 +226,7 @@ func (vs *ValidatorSuite) TestValidateIgnoreNonExportedVars(c *C) {
 	err := validate.Validate(test[0])
 	c.Assert(err, NotNil)
 
-	errs, ok := err.(validate.ErrorMap)
+	errs, ok := err.(errors.ErrorHash)
 	c.Assert(ok, Equals, true)
 	c.Assert(errs["A"], HasLen, 1)
 	c.Assert(errs["A"], HasError, validate.ErrRequired)
@@ -281,10 +281,10 @@ type testStructValidateFuncInterface struct {
 	A            int `validate:"min(2)"`
 	B            int `validate:"min(2)"`
 	C            int `validate:"min(10)"`
-	validateFunc func() validate.ErrorMap
+	validateFunc func() errors.ErrorHash
 }
 
-func (s testStructValidateFuncInterface) Validate() validate.ErrorMap {
+func (s testStructValidateFuncInterface) Validate() errors.ErrorHash {
 	return s.validateFunc()
 }
 
@@ -296,16 +296,16 @@ func (vs *ValidatorSuite) TestStructValidateInterface(c *C) {
 		A: 1,
 		B: 2,
 		C: 3,
-		validateFunc: func() validate.ErrorMap {
-			return validate.ErrorMap{
-				"A": validate.Errors{customErr1, customErr2},
-				"B": validate.Errors{customErr1},
-				"D": validate.Errors{customErr2},
+		validateFunc: func() errors.ErrorHash {
+			return errors.ErrorHash{
+				"A": errors.Errors{customErr1, customErr2},
+				"B": errors.Errors{customErr1},
+				"D": errors.Errors{customErr2},
 			}
 		},
 	}
 
-	errs := validate.Validate(test).(validate.ErrorMap)
+	errs := validate.Validate(test).(errors.ErrorHash)
 
 	c.Assert(errs, HasLen, 4)
 	c.Assert(errs["A"], HasLen, 3)
@@ -319,7 +319,7 @@ func (vs *ValidatorSuite) TestStructValidateInterface(c *C) {
 	c.Assert(errs["D"], HasLen, 1)
 	c.Assert(errs["D"], HasError, customErr2)
 
-	errs = validate.Validate(&test).(validate.ErrorMap)
+	errs = validate.Validate(&test).(errors.ErrorHash)
 
 	c.Assert(errs, HasLen, 4)
 	c.Assert(errs["A"], HasLen, 3)
@@ -339,20 +339,20 @@ func (vs *ValidatorSuite) TestValidMap(c *C) {
 
 	err := validate.Valid(m, "required")
 	c.Assert(err, NotNil)
-	errs, ok := err.(validate.Errors)
+	errs, ok := err.(errors.Errors)
 	c.Assert(ok, Equals, true)
 	c.Assert(errs, HasError, validate.ErrRequired)
 
 	err = validate.Valid(m, "min(1)")
 	c.Assert(err, NotNil)
-	errs, ok = err.(validate.Errors)
+	errs, ok = err.(errors.Errors)
 	c.Assert(ok, Equals, true)
 	c.Assert(errs, HasError, validate.ErrMin)
 
 	m = map[string]string{"A": "a", "B": "a"}
 	err = validate.Valid(m, "max(1)")
 	c.Assert(err, NotNil)
-	errs, ok = err.(validate.Errors)
+	errs, ok = err.(errors.Errors)
 	c.Assert(ok, Equals, true)
 	c.Assert(errs, HasError, validate.ErrMax)
 
@@ -368,7 +368,7 @@ func (vs *ValidatorSuite) TestValidMap(c *C) {
 	}
 	err = validate.Valid(m, "len(4),min(6),max(1),required")
 	c.Assert(err, NotNil)
-	errs, ok = err.(validate.Errors)
+	errs, ok = err.(errors.Errors)
 	c.Assert(ok, Equals, true)
 	c.Assert(errs, HasError, validate.ErrLen)
 	c.Assert(errs, HasError, validate.ErrMin)
@@ -383,7 +383,7 @@ func (vs *ValidatorSuite) TestValidFloat(c *C) {
 
 	err = validate.Valid(0.0, "required")
 	c.Assert(err, NotNil)
-	errs, ok := err.(validate.Errors)
+	errs, ok := err.(errors.Errors)
 	c.Assert(ok, Equals, true)
 	c.Assert(errs, HasError, validate.ErrRequired)
 }
@@ -398,14 +398,14 @@ func (vs *ValidatorSuite) TestValidInt(c *C) {
 
 	err = validate.Valid(i, "min(124), max(122)")
 	c.Assert(err, NotNil)
-	errs, ok := err.(validate.Errors)
+	errs, ok := err.(errors.Errors)
 	c.Assert(ok, Equals, true)
 	c.Assert(errs, HasError, validate.ErrMin)
 	c.Assert(errs, HasError, validate.ErrMax)
 
 	err = validate.Valid(i, "max(10)")
 	c.Assert(err, NotNil)
-	errs, ok = err.(validate.Errors)
+	errs, ok = err.(errors.Errors)
 	c.Assert(ok, Equals, true)
 	c.Assert(errs, HasError, validate.ErrMax)
 }
@@ -417,7 +417,7 @@ func (vs *ValidatorSuite) TestValidString(c *C) {
 
 	err = validate.Valid(s, "len(0)")
 	c.Assert(err, NotNil)
-	errs, ok := err.(validate.Errors)
+	errs, ok := err.(errors.Errors)
 	c.Assert(ok, Equals, true)
 	c.Assert(errs, HasError, validate.ErrLen)
 
@@ -429,7 +429,7 @@ func (vs *ValidatorSuite) TestValidString(c *C) {
 
 	err = validate.Valid("", `required,len(3),max(1)`)
 	c.Assert(err, NotNil)
-	errs, ok = err.(validate.Errors)
+	errs, ok = err.(errors.Errors)
 	c.Assert(ok, Equals, true)
 	c.Assert(errs, HasLen, 2)
 	c.Assert(errs, HasError, validate.ErrRequired)
@@ -444,7 +444,7 @@ func (vs *ValidatorSuite) TestValidPtr(c *C) {
 
 	err = validate.Valid(&s, "len(0)")
 	c.Assert(err, NotNil)
-	errs, ok := err.(validate.Errors)
+	errs, ok := err.(errors.Errors)
 	c.Assert(ok, Equals, true)
 	c.Assert(errs, HasError, validate.ErrLen)
 }
@@ -467,7 +467,7 @@ func (vs *ValidatorSuite) TestValidateWithCustomValidator(c *C) {
 
 	err = validator.Valid("foo", `equals("bar")`)
 	c.Assert(err, NotNil)
-	errs, ok := err.(validate.Errors)
+	errs, ok := err.(errors.Errors)
 	c.Assert(ok, Equals, true)
 	c.Assert(errs, HasError, validate.ErrInvalid)
 }
@@ -504,7 +504,7 @@ func (vs *ValidatorSuite) TestValidateWithTag(c *C) {
 	err := validator.Validate(test)
 	c.Assert(err, NotNil)
 
-	errs, ok := err.(validate.ErrorMap)
+	errs, ok := err.(errors.ErrorHash)
 	c.Assert(ok, Equals, true)
 	c.Assert(errs, HasLen, 1)
 	c.Assert(errs["A"], HasLen, 1)
@@ -522,7 +522,7 @@ func (vs *ValidatorSuite) TestValidateSetTag(c *C) {
 	err := validator.Validate(test)
 	c.Assert(err, NotNil)
 
-	errs, ok := err.(validate.ErrorMap)
+	errs, ok := err.(errors.ErrorHash)
 	c.Assert(ok, Equals, true)
 	c.Assert(errs, HasLen, 1)
 	c.Assert(errs["A"], HasLen, 1)
@@ -533,7 +533,7 @@ type testSimpleValidateEmbed struct {
 	A int `validate:"min(10)"`
 }
 
-func (t *testSimpleValidateEmbed) Validate() validate.ErrorMap {
+func (t *testSimpleValidateEmbed) Validate() errors.ErrorHash {
 	return nil
 }
 
@@ -547,7 +547,7 @@ func (c *hasErrorChecker) Check(params []interface{}, names []string) (bool, str
 		slice []error
 		value error
 	)
-	slice, ok = params[0].(validate.Errors)
+	slice, ok = params[0].(errors.Errors)
 	if !ok {
 		return false, "First parameter is not an Errorarray"
 	}
