@@ -7,6 +7,7 @@ const (
 	alphaNumericRegexString = "^[a-zA-Z0-9]+$"
 	alphaDashRegexString    = "[^\\d\\w-_]"
 	alphaDashDotRegexString = "[^\\d\\w-_\\.]"
+	identifierRegexString   = "[\\d\\w][^\\d\\w-_\\.]*"
 	numericRegexString      = "^[-+]?[0-9]+(?:\\.[0-9]+)?$"
 	numberRegexString       = "^[0-9]+$"
 	emailRegexString        = "^[\\w!#$%&'*+/=?^_`{|}~-]+(?:\\.[\\w!#$%&'*+/=?^_`{|}~-]+)*@(?:[\\w](?:[\\w-]*[\\w])?\\.)+[a-zA-Z0-9](?:[\\w-]*[\\w])?$"
@@ -24,6 +25,7 @@ var (
 	alphaNumericRegex = regexp.MustCompile(alphaNumericRegexString)
 	alphaDashRegex    = regexp.MustCompile(alphaDashRegexString)
 	alphaDashDotRegex = regexp.MustCompile(alphaDashDotRegexString)
+	identifierRegex   = regexp.MustCompile(identifierRegexString)
 	numericRegex      = regexp.MustCompile(numericRegexString)
 	numberRegex       = regexp.MustCompile(numberRegexString)
 	emailRegex        = regexp.MustCompile(emailRegexString)

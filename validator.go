@@ -47,6 +47,7 @@ func NewValidator() Validator {
 	return &validator{
 		tagName: "validate",
 		validationFuncs: map[string]ValidationFunc{
+			"omitempty":      omitempty,
 			"required":       required,
 			"len":            length,
 			"min":            min,
@@ -60,6 +61,7 @@ func NewValidator() Validator {
 			"email":          email,
 			"numeric":        numeric,
 			"number":         number,
+			"identifier":     identifier,
 			"alpha_dash":     alphaDash,
 			"alpha_dash_dot": alphaDashDot,
 			"alpha":          alpha,
@@ -263,6 +265,9 @@ func (mv *validator) validateVar(v interface{}, tag string) error {
 	errs := make(errors.Errors, 0, len(tags))
 	for _, t := range tags {
 		if err := t.Fn(v, t.Args); err != nil {
+			if err == errOmitEmpty {
+				return nil
+			}
 			errs = append(errs, err)
 		}
 	}

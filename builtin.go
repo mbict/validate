@@ -8,8 +8,40 @@ import (
 	"strings"
 )
 
-// nonzero tests whether a variable value non-zero
-// as defined by the golang spec.
+// omitempty tests whether a variable is zero
+func omitempty(v interface{}, params []string) error {
+	st := reflect.ValueOf(v)
+	valid := true
+	switch st.Kind() {
+	case reflect.String:
+		valid = len(st.String()) != 0
+	case reflect.Ptr, reflect.Interface:
+		valid = !st.IsNil()
+	case reflect.Slice, reflect.Map, reflect.Array:
+		valid = st.Len() != 0
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		valid = st.Int() != 0
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		valid = st.Uint() != 0
+	case reflect.Float32, reflect.Float64:
+		valid = st.Float() != 0
+	case reflect.Bool:
+		valid = st.Bool()
+	case reflect.Invalid:
+		valid = false // always invalid
+	case reflect.Struct:
+		valid = true // always valid since only nil pointers are empty
+	default:
+		return ErrUnsupported
+	}
+
+	if !valid {
+		return errOmitEmpty
+	}
+	return nil
+}
+
+// required tests whether the value is non-zero
 func required(v interface{}, params []string) error {
 	st := reflect.ValueOf(v)
 	valid := true
@@ -480,6 +512,18 @@ func numeric(v interface{}, params []string) error {
 
 	if numericRegex.MatchString(s) {
 		return ErrNumeric
+	}
+	return nil
+}
+
+func identifier(v interface{}, params []string) error {
+	s, ok := v.(string)
+	if !ok {
+		return ErrUnsupported
+	}
+
+	if identifierRegex.MatchString(s) {
+		return ErrIdentifier
 	}
 	return nil
 }

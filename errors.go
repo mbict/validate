@@ -5,6 +5,9 @@ import (
 )
 
 var (
+	// errOmitEmpty is the error returned when variable has a empty value
+	errOmitEmpty = errors.New("omitempty")
+
 	// ErrRequired is the error returned when variable has a empty value
 	ErrRequired = errors.New("required")
 
@@ -31,6 +34,10 @@ var (
 	// ErrRegexp is the error returned when the value does not
 	// match the provided regular expression parameter
 	ErrRegexp = errors.New("regular expression mismatch")
+
+	// ErrIdentifier is the error returned when the value does not match the
+	// identifier pattern
+	ErrIdentifier = errors.New("invalid id format")
 
 	// ErrAlpha is the error returned when the value does contains
 	// other characters than alphas

@@ -135,6 +135,9 @@ There are a few common set of builin validators included in the package.
     base64
         tbd
         
+    identifier
+        tbd
+        
 Custom validators
 
 It is possible to define your own custom validators by using SetValidationFunc.
