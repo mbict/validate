@@ -1,0 +1,23 @@
+{{ define "string/required" }}
+	if v.{{ .Name }} == "" {
+		errs.Add("{{ .Name }}", Errors.New("`{{ .Name }}` is required"))
+	}
+{{ end }}
+
+{{ define "int/required" }}
+	if v.{{ .Name }} == 0 {
+	    errs.Add("{{ .Name }}", Errors.New("`{{ .Name }}` is required"))
+	}
+{{ end }}
+
+{{ define "ptr/required" }}
+	if v.{{ .Name }} == nil {
+		errs.Add("{{ .Name }}", Errors.New("`{{ .Name }}` is required"))
+	}
+{{ end }}
+
+{{ define "slice/required" }}
+	if v.{{ .Name }} == nil || len(v.{{ .Name }}) == 0 {
+		errs.Add("{{ .Name }}", Errors.New("`{{ .Name }}` is required"))
+	}
+{{ end }}
