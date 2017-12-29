@@ -21,8 +21,8 @@ type Validator interface {
 
 // validatorTag represents one of the validatorTag items
 type validatorTag struct {
-	tags.Param               // name of the validator and the arguments to send to the validator func
-	Fn         ValidatorFunc // validation function to call
+	tags.Param       // name of the validator and the arguments to send to the validator func
+	Fn ValidatorFunc // validation function to call
 }
 
 // ValidateInterface describes the interface a structure can embed to enable custom validation of the structure
@@ -112,6 +112,7 @@ func NewValidator(options ...Option) Validator {
 			"uuid4":          uuid4,
 			"uuid5":          uuid5,
 			"base64":         base64,
+			"enum":           enum,
 		},
 		structRules:  make(StructRules),
 		nameResolver: DefaultNameResolver,

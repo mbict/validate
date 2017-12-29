@@ -148,6 +148,9 @@ var (
 
 	// ErrBase64 is the error returned when value is not a valid base64 encoded
 	ErrBase64 = NewValidationError("invalid base64 encoded")
+
+	// ErrBEnum is the error returned when value is not in a set of enum values
+	ErrEnum = NewValidationError("invalid value")
 )
 
 type ErrorList []error

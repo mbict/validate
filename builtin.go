@@ -681,6 +681,33 @@ func base64(v interface{}, params []string) error {
 	return nil
 }
 
+func enum(v interface{}, params []string) error {
+
+	checkEnum := func(a string) bool {
+		for _, b := range params {
+			if b == a {
+				return true
+			}
+		}
+		return false
+	}
+
+	if ss, ok := v.([]string); ok {
+		for _, s := range ss {
+			if checkEnum(s) == false {
+				return ErrEnum
+			}
+		}
+	} else if s, ok := v.(string); ok {
+		if checkEnum(s) == false {
+			return ErrEnum
+		}
+	} else {
+		return ErrUnsupported
+	}
+	return nil
+}
+
 // asInt returns the parameter as a int64
 // or panics if it can't convert
 func asInt(param string) (int64, error) {
