@@ -727,3 +727,16 @@ func (s *BuiltinSuite) TestExclude(c *C) {
 	c.Check(validate.Valid(string(""), "exclude(foo,bar)"), IsNil)
 	c.Check(validate.Valid(string("baz"), "exclude(foo,bar)"), IsNil)
 }
+
+func (s *BuiltinSuite) TestEnum(c *C) {
+	c.Check(validate.Valid(string(""), "enum(aa,bb,cc)"), ErrorMatches, "invalid value")
+	c.Check(validate.Valid(string("test.com"), "enum(aa,bb,cc)"), ErrorMatches, "invalid value")
+	c.Check(validate.Valid([]string{""}, "enum(aa,bb,cc)"), ErrorMatches, "invalid value")
+	c.Check(validate.Valid([]string{"test.com"}, "enum(aa,bb,cc)"), ErrorMatches, "invalid value")
+	c.Check(validate.Valid(int(0), "enum(aa,bb,cc)"), ErrorMatches, "unsupported type")
+
+
+	c.Check(validate.Valid(string("bb"), "enum(aa,bb,cc)"), IsNil)
+	c.Check(validate.Valid([]string{"bb","aa"}, "enum(aa,bb,cc)"), IsNil)
+	c.Check(validate.Valid([]string{}, "enum(aa,bb,cc)"), IsNil)
+}

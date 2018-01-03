@@ -74,6 +74,27 @@ func required(v interface{}, params []string) error {
 	return nil
 }
 
+func notEmpty(i interface{}, params []string) error {
+	switch v := i.(type) {
+	case fmt.Stringer:
+		if len(v.String()) <= 0 {
+			return ErrEmpty
+		}
+	case *string:
+		if v == nil || len(*v) <= 0 {
+			return ErrEmpty
+		}
+	case string:
+		if len(v) <= 0 {
+			return ErrEmpty
+		}
+	default:
+		return ErrUnsupported
+	}
+
+	return nil
+}
+
 // length tests whether a variable's length is equal to a given
 // value. For strings it tests the number of characters whereas
 // for maps and slices it tests the number of items.
@@ -656,6 +677,33 @@ func base64(v interface{}, params []string) error {
 
 	if base64Regex.MatchString(s) {
 		return ErrBase64
+	}
+	return nil
+}
+
+func enum(v interface{}, params []string) error {
+
+	checkEnum := func(a string) bool {
+		for _, b := range params {
+			if b == a {
+				return true
+			}
+		}
+		return false
+	}
+
+	if ss, ok := v.([]string); ok {
+		for _, s := range ss {
+			if checkEnum(s) == false {
+				return ErrEnum
+			}
+		}
+	} else if s, ok := v.(string); ok {
+		if checkEnum(s) == false {
+			return ErrEnum
+		}
+	} else {
+		return ErrUnsupported
 	}
 	return nil
 }
