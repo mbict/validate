@@ -347,11 +347,11 @@ func (mv *validator) parseStruct(t reflect.Type) (rules, error) {
 			continue
 		}
 
-		fieldName := mv.nameResolver(sf)
-		if !unicode.IsUpper(rune(fieldName[0])) {
+		if !unicode.IsUpper(rune(sf.Name[0])) {
 			continue
 		}
 
+		fieldName := mv.nameResolver(sf)
 		rule := rule{
 			Name:       fieldName,
 			FieldIndex: i,
