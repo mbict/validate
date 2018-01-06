@@ -622,49 +622,69 @@ func url(v interface{}, params []string) error {
 }
 
 func uuid(v interface{}, params []string) error {
-	s, ok := v.(string)
-	if !ok {
-		return ErrUnsupported
-	}
+	switch v := v.(type) {
+	case fmt.Stringer:
+		if !uUIDRegex.MatchString(v.String()) {
+			return ErrUUID4
+		}
+	case string:
+		if !uUIDRegex.MatchString(v) {
+			return ErrUUID4
+		}
 
-	if !uUIDRegex.MatchString(s) {
-		return ErrUUID
+	default:
+		return ErrUnsupported
 	}
 	return nil
 }
 
 func uuid3(v interface{}, params []string) error {
-	s, ok := v.(string)
-	if !ok {
-		return ErrUnsupported
-	}
+	switch v := v.(type) {
+	case fmt.Stringer:
+		if !uUID3Regex.MatchString(v.String()) {
+			return ErrUUID4
+		}
+	case string:
+		if !uUID3Regex.MatchString(v) {
+			return ErrUUID4
+		}
 
-	if !uUID3Regex.MatchString(s) {
-		return ErrUUID3
+	default:
+		return ErrUnsupported
 	}
 	return nil
 }
 
 func uuid4(v interface{}, params []string) error {
-	s, ok := v.(string)
-	if !ok {
-		return ErrUnsupported
-	}
+	switch v := v.(type) {
+	case fmt.Stringer:
+		if !uUID4Regex.MatchString(v.String()) {
+			return ErrUUID4
+		}
+	case string:
+		if !uUID4Regex.MatchString(v) {
+			return ErrUUID4
+		}
 
-	if !uUID4Regex.MatchString(s) {
-		return ErrUUID4
+	default:
+		return ErrUnsupported
 	}
 	return nil
 }
 
 func uuid5(v interface{}, params []string) error {
-	s, ok := v.(string)
-	if !ok {
-		return ErrUnsupported
-	}
+	switch v := v.(type) {
+	case fmt.Stringer:
+		if !uUID5Regex.MatchString(v.String()) {
+			return ErrUUID4
+		}
+	case string:
+		if !uUID5Regex.MatchString(v) {
+			return ErrUUID4
+		}
 
-	if !uUID5Regex.MatchString(s) {
-		return ErrUUID5
+	default:
+		return ErrUnsupported
 	}
 	return nil
 }
@@ -682,7 +702,6 @@ func base64(v interface{}, params []string) error {
 }
 
 func enum(v interface{}, params []string) error {
-
 	checkEnum := func(a string) bool {
 		for _, b := range params {
 			if b == a {

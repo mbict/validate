@@ -4,7 +4,6 @@ import (
 	"github.com/mbict/go-errors"
 	"github.com/mbict/go-tags"
 	"reflect"
-	"strings"
 	"sync"
 	"unicode"
 )
@@ -15,14 +14,16 @@ type Validator interface {
 	WithTag(tag string) Validator
 	SetValidationFunc(name string, vf ValidatorFunc) error
 	SetNameResolver(resolver NameResolverFunc)
+	ValidateAll(v interface{}) error
 	Validate(v interface{}) error
+	ValidAll(val interface{}, tags string) error
 	Valid(val interface{}, tags string) error
 }
 
 // validatorTag represents one of the validatorTag items
 type validatorTag struct {
-	tags.Param       // name of the validator and the arguments to send to the validator func
-	Fn ValidatorFunc // validation function to call
+	tags.Param               // name of the validator and the arguments to send to the validator func
+	Fn         ValidatorFunc // validation function to call
 }
 
 // ValidateInterface describes the interface a structure can embed to enable custom validation of the structure
@@ -38,24 +39,9 @@ type ValidatorFunc func(v interface{}, params []string) error
 type validator struct {
 	tagName         string                   // structure validatorTag name being used (`validate`)
 	validationFuncs map[string]ValidatorFunc // validator functions map indexed by name
-	structRules     StructRules              // structure rules cache
+	structRules     structRules              // structure rules cache
 	mu              sync.RWMutex             // rw mutex for structure rules cache
 	nameResolver    NameResolverFunc         // func to extract the name to use for field error
-}
-
-type NameResolverFunc func(reflect.StructField) string
-
-var DefaultNameResolver = func(field reflect.StructField) string {
-	return field.Name
-}
-
-var JsonNameResolver = func(field reflect.StructField) string {
-	tag := field.Tag.Get("json")
-	props := strings.SplitN(tag, ",", 2)
-	if props[0] == "" {
-		return field.Name
-	}
-	return props[0]
 }
 
 // Helper validator so users can use the
@@ -114,7 +100,7 @@ func NewValidator(options ...Option) Validator {
 			"base64":         base64,
 			"enum":           enum,
 		},
-		structRules:  make(StructRules),
+		structRules:  make(structRules),
 		nameResolver: DefaultNameResolver,
 	}
 
@@ -145,14 +131,25 @@ func SetValidationFunc(name string, vf ValidatorFunc) error {
 }
 
 // Validate validates the fields of a struct based  on 'validator' tags and returns
-// errors found indexed by the field name.
+// the first validation error found per field name.
 func Validate(v interface{}) error {
 	return defaultValidator.Validate(v)
 }
 
-// Valid validates a value based on the provided tags and returns errors found or nil.
+// ValidateAll validates the fields of a struct based  on 'validator' tags and returns
+// errors found indexed by the field name.
+func ValidateAll(v interface{}) error {
+	return defaultValidator.ValidateAll(v)
+}
+
+// Valid validates a value based on the provided tags and returns the first validation error found or nil.
 func Valid(val interface{}, tags string) error {
 	return defaultValidator.Valid(val, tags)
+}
+
+// ValidAll validates a value based on the provided tags and returns errors found or nil.
+func ValidAll(val interface{}, tags string) error {
+	return defaultValidator.ValidAll(val, tags)
 }
 
 // SetNameResolver allows you to change the way field names are resolved
@@ -200,9 +197,18 @@ func (mv *validator) SetValidationFunc(name string, vf ValidatorFunc) error {
 }
 
 // Validate validates the fields of a struct based on 'validator' tags and returns
-// errors found indexed by the field name.
-// The returned error is of the type errors.ErrorHash.
+// the first valiadtion errors found indexed per field name.
 func (mv *validator) Validate(v interface{}) error {
+	return mv.validate(v, true)
+}
+
+// ValidateAll validates the fields of a struct based on 'validator' tags and returns
+// errors found indexed by the field name.
+func (mv *validator) ValidateAll(v interface{}) error {
+	return mv.validate(v, false)
+}
+
+func (mv *validator) validate(v interface{}, stopOnError bool) error {
 	sv := reflect.ValueOf(v)
 
 	//nil pointer not type found
@@ -211,7 +217,7 @@ func (mv *validator) Validate(v interface{}) error {
 	}
 
 	if sv.Kind() == reflect.Ptr && !sv.IsNil() {
-		return mv.Validate(sv.Elem().Interface())
+		return mv.validate(sv.Elem().Interface(), stopOnError)
 	}
 
 	if sv.Kind() != reflect.Struct {
@@ -232,13 +238,13 @@ func (mv *validator) Validate(v interface{}) error {
 		rules = r
 	}
 
-	if errs := rules.Validate(sv); len(errs) > 0 {
+	if errs := rules.Validate(sv, stopOnError); len(errs) > 0 {
 		return errs
 	}
 	return nil
 }
 
-// Valid validates a value based on the provided tags and returns errors found or nil.
+// Valid validates a value based on the provided tags and returns the first validation error found or nil.
 func (mv *validator) Valid(val interface{}, tags string) error {
 	if tags == "-" {
 		return nil
@@ -249,19 +255,35 @@ func (mv *validator) Valid(val interface{}, tags string) error {
 	}
 
 	if v.Kind() == reflect.Invalid {
-		return mv.validateVar(nil, tags)
+		return mv.validateVar(nil, tags, true)
 	}
-	return mv.validateVar(val, tags)
+	return mv.validateVar(val, tags, true)
+}
+
+// ValidAll validates a value based on the provided tags and returns errors found or nil.
+func (mv *validator) ValidAll(val interface{}, tags string) error {
+	if tags == "-" {
+		return nil
+	}
+	v := reflect.ValueOf(val)
+	if v.Kind() == reflect.Ptr && !v.IsNil() {
+		return mv.ValidAll(v.Elem().Interface(), tags)
+	}
+
+	if v.Kind() == reflect.Invalid {
+		return mv.validateVar(nil, tags, false)
+	}
+	return mv.validateVar(val, tags, false)
 }
 
 func (mv *validator) resetCache() {
 	mv.mu.Lock()
 	defer mv.mu.Unlock()
-	mv.structRules = make(StructRules, 0)
+	mv.structRules = make(structRules, 0)
 }
 
 // validateVar validates a single variable
-func (mv *validator) validateVar(v interface{}, tag string) error {
+func (mv *validator) validateVar(v interface{}, tag string, stopOnError bool) error {
 	tags, err := mv.parseTags(tag)
 	if err != nil {
 		// unknown validatorTag found.
@@ -274,6 +296,10 @@ func (mv *validator) validateVar(v interface{}, tag string) error {
 				return nil
 			}
 			errs = append(errs, err)
+
+			if stopOnError == true {
+				return errs
+			}
 		}
 	}
 	return errs
@@ -303,7 +329,7 @@ func (mv *validator) parseTags(t string) ([]validatorTag, error) {
 }
 
 // parseStruct will extract all the validation rules from the given structure
-func (mv *validator) parseStruct(t reflect.Type) (Rules, error) {
+func (mv *validator) parseStruct(t reflect.Type) (rules, error) {
 	if t.Kind() == reflect.Ptr {
 		t = t.Elem()
 	}
@@ -312,7 +338,7 @@ func (mv *validator) parseStruct(t reflect.Type) (Rules, error) {
 		return nil, ErrUnsupported
 	}
 
-	rules := Rules{}
+	rules := rules{}
 	for i := 0; i < t.NumField(); i++ {
 		sf := t.Field(i)
 		tag := sf.Tag.Get(mv.tagName)
@@ -326,7 +352,7 @@ func (mv *validator) parseStruct(t reflect.Type) (Rules, error) {
 			continue
 		}
 
-		rule := Rule{
+		rule := rule{
 			Name:       fieldName,
 			FieldIndex: i,
 			IsSlice:    false,
