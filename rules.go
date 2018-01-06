@@ -7,24 +7,24 @@ import (
 
 type ValidateFunc func(i interface{}) error
 
-type StructRules map[reflect.Type]Rules
+type structRules map[reflect.Type]rules
 
-type Rules []Rule
+type rules []rule
 
-type Rule struct {
+type rule struct {
 	Name       string
 	FieldIndex int
 	IsSlice    bool
 	IsStruct   bool
 	Validators []validatorTag
-	Subset     Rules
+	Subset     rules
 }
 
-func (r *Rules) Validate(value reflect.Value) Errors {
+func (r *rules) Validate(value reflect.Value, stopOnError bool) Errors {
 	var errs Errors
 	for _, rule := range *r {
 		v := value.Field(rule.FieldIndex)
-		if verr := rule.Validate(v); verr != nil {
+		if verr := rule.Validate(v, stopOnError); verr != nil {
 			errs.Merge(verr)
 		}
 	}
@@ -39,13 +39,17 @@ func (r *Rules) Validate(value reflect.Value) Errors {
 	return errs
 }
 
-func (r *Rule) Validate(value reflect.Value) Errors {
+func (r *rule) Validate(value reflect.Value, stopOnError bool) Errors {
 	var errs Errors
 
 	i := value.Interface()
 	for _, validator := range r.Validators {
 		if err := validator.Fn(i, validator.Args); err != nil {
 			errs.Add(r.Name, err)
+
+			if stopOnError == true {
+				return errs
+			}
 		}
 	}
 
@@ -56,13 +60,13 @@ func (r *Rule) Validate(value reflect.Value) Errors {
 	value = reflect.Indirect(value)
 	if r.IsSlice && r.IsStruct {
 		for i := 0; i < value.Len(); i++ {
-			errv := r.Subset.Validate(reflect.Indirect(value.Index(i)))
+			errv := r.Subset.Validate(reflect.Indirect(value.Index(i)), stopOnError)
 			if errv != nil {
 				errs.MergePrefix(fmt.Sprintf("%s.%d.", r.Name, i), errv)
 			}
 		}
 	} else if r.IsStruct {
-		errv := r.Subset.Validate(value)
+		errv := r.Subset.Validate(value, stopOnError)
 		if errv != nil {
 			errs.MergePrefix(r.Name+".", errv)
 		}
