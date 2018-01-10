@@ -36,6 +36,9 @@ func (r *rules) Validate(value reflect.Value, stopOnError bool) Errors {
 		}
 	}
 
+	if errs == nil {
+		return nil
+	}
 	return errs
 }
 
@@ -72,5 +75,8 @@ func (r *rule) Validate(value reflect.Value, stopOnError bool) Errors {
 		}
 	}
 
+	if errs == nil {
+		return nil
+	}
 	return errs
 }
