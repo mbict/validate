@@ -27,6 +27,14 @@ func (e validationError) Error() string {
 	return fmt.Sprintf(e.template, e.args...)
 }
 
+func (e validationError) MarshalJSON() ([]byte, error) {
+	return json.Marshal(e.Error())
+}
+
+func (e *validationError) UnmarshalJSON(data []byte) error {
+	return json.Unmarshal(data, &e.template)
+}
+
 func NewValidationError(template string, args ...interface{}) ValidationError {
 	return &validationError{
 		template: template,
@@ -275,4 +283,21 @@ func (e Errors) MarshalJSON() ([]byte, error) {
 	}
 	buf.WriteString("}")
 	return buf.Bytes(), nil
+}
+
+func (e *Errors) UnmarshalJSON(data []byte) error {
+	errs := map[string][]validationError{}
+	err := json.Unmarshal(data, &errs)
+	if err != nil {
+		return err
+	}
+
+	*e = make(map[string][]error, len(errs))
+	for k, v := range errs {
+		(*e)[k] = make([]error, len(v))
+		for i, err := range v {
+			(*e)[k][i] = error(err)
+		}
+	}
+	return nil
 }
